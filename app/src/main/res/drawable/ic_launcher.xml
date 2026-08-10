@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  应用启动图标（vector）。避免依赖 @android:drawable/sym_def_app_icon
+  （部分定制 ROM 移除了该系统资源，导致 PackageManager 解析失败）。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 紫色圆角背景 -->
+    <path
+        android:fillColor="#6750A4"
+        android:pathData="M27,0 L81,0 A27,27 0 0 1 108,27 L108,81 A27,27 0 0 1 81,108 L27,108 A27,27 0 0 1 0,81 L0,27 A27,27 0 0 1 27,0 Z" />
+    <!-- 白色对话框图标 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,32 L78,32 A6,6 0 0 1 84,38 L84,62 A6,6 0 0 1 78,68 L52,68 L40,78 L40,68 L30,68 A6,6 0 0 1 24,62 L24,38 A6,6 0 0 1 30,32 Z" />
+    <!-- 三个对话点 -->
+    <path android:fillColor="#6750A4" android:pathData="M42,50 m-3,0 a3,3 0 1 0 6,0 a3,3 0 1 0 -6,0" />
+    <path android:fillColor="#6750A4" android:pathData="M54,50 m-3,0 a3,3 0 1 0 6,0 a3,3 0 1 0 -6,0" />
+    <path android:fillColor="#6750A4" android:pathData="M66,50 m-3,0 a3,3 0 1 0 6,0 a3,3 0 1 0 -6,0" />
+</vector>

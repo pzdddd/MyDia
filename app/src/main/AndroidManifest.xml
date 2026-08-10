@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 列出全部已安装 App（「应用」Tab 需要） -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <application
+        android:name=".App"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@drawable/ic_launcher"
+        android:roundIcon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyDia">
+
+        <!-- ============ Xposed 模块声明（API 102 compat 模式） ============ -->
+        <!-- 入口靠 META-INF/xposed/java_init.list + module.prop(minApiVersion=93,
+             targetApiVersion=102)。minApiVersion=93 让 LSPosed 注入旧 API 兼容层
+             （compat bridge），hook 实现层的 XposedBridge 旧 API 才能用。
+             Manifest 不再需要 xposedmodule meta-data（API 102 由 module.prop 声明）。
+             xposedsharedprefs 保留：让本模块 SP 文件 world-readable（配合写入方 chmod 0644）。 -->
+        <meta-data android:name="xposedsharedprefs" android:value="true" />
+
+        <!-- ============ 主界面（也是从 LSPosed 模块列表点进来的落地页） ============ -->
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <!-- 让 LSPosed 能识别这是模块设置页 -->
+                <category android:name="de.robv.android.xposed.category.MODULE_SETTINGS" />
+            </intent-filter>
+        </activity>
+
+        <!-- ============ 监控数据接收：Shell 命令监控（演示用） ============ -->
+        <receiver
+            android:name=".monitor.ShellMonitorReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.pzdd.mydia.ACTION_SHELL_MONITOR" />
+            </intent-filter>
+        </receiver>
+
+        <!-- ============ 监控数据接收：算法监控（MD5/AES/HMAC/Base64） ============ -->
+        <receiver
+            android:name=".monitor.AlgorithmMonitorReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.pzdd.mydia.ACTION_ALGORITHM_MONITOR" />
+            </intent-filter>
+        </receiver>
+
+        <!-- ============ 监控数据接收：远程日志控制台（注入侧模块日志） ============ -->
+        <receiver
+            android:name=".monitor.ConsoleLogReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.pzdd.mydia.ACTION_CONSOLE_LOG" />
+            </intent-filter>
+        </receiver>
+
+        <!-- ============ 算法监控日志查看页 ============ -->
+        <activity
+            android:name=".ui.AlgorithmLogActivity"
+            android:exported="false"
+            android:label="算法监控日志" />
+
+        <!-- ============ 远程日志控制台查看页 ============ -->
+        <activity
+            android:name=".ui.ConsoleLogActivity"
+            android:exported="false"
+            android:label="日志控制台" />
+
+        <!-- ============ 增强模式配置页 ============ -->
+        <activity
+            android:name=".ui.EnhanceActivity"
+            android:exported="false"
+            android:label="增强模式" />
+
+        <!-- ============ 通用分类配置页（6 大分类共用）============ -->
+        <activity
+            android:name=".ui.CategoryActivity"
+            android:exported="false"
+            android:label="分类配置" />
+
+        <!-- ============ 某 App 的功能列表页（从「应用」Tab 点击进入）============ -->
+        <activity
+            android:name=".ui.AppFunctionListActivity"
+            android:exported="false"
+            android:label="功能列表" />
+    </application>
+
+</manifest>

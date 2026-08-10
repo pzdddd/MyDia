@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  作用域：默认 hook 的目标 App。可在这里增删包名。
+  也可在 LSPosed Manager 里手动勾选，写不写都不影响功能。
+  （界面下拉选项已内联到 PrefRegistry.kt，故本文件只剩 xposed_scope。）
+-->
+<resources>
+    <string-array name="xposed_scope">
+        <item>com.android.settings</item>
+        <!-- <item>com.tencent.mm</item> -->
+    </string-array>
+</resources>

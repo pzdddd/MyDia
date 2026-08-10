@@ -1,0 +1,68 @@
+[versions]
+# backdrop（液态玻璃）AAR 要求 compileSdk 37 + AGP 9.x；对齐其编译 Kotlin 2.3.21
+agp = "9.1.0"
+kotlin = "2.3.21"
+coreKtx = "1.13.1"
+appcompat = "1.7.1"
+material = "1.13.0"
+preference = "1.2.1"
+constraintlayout = "2.2.1"
+timber = "5.0.1"
+# 高阶功能依赖
+dexkit = "2.2.0"
+gson = "2.11.0"
+# Jetpack Compose（Material3 全新 UI 框架）
+composeBom = "2026.06.01"
+activityCompose = "1.10.1"
+lifecycleRuntimeCompose = "2.9.4"
+# libxposed 新 API（LSPosed 推荐）
+# api 102（入口用）；service 用 101（102 要求 compileSdk 37，101 仅 minSdk 26，功能一致）
+libxposedApi = "102.0.0"
+libxposedService = "101.0.0"
+# 液态玻璃效果库（blur + lens 折射 + vibrancy）—— 对齐 pznote 用 1.0.6
+backdrop = "1.0.6"
+# backdrop 依赖的形状库（Capsule 等）
+kyantShapes = "1.2.0"
+# Haze：另一套毛玻璃（hazeBlur），渲染方式不同于 backdrop，验证长列表稳定性
+haze = "2.0.0-alpha04"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "preference" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+# 方法改写引擎：按特征模糊查找方法/类（替代 Dia 原版的 dexlib2 + 自写 MethodFinder）
+dexkit = { group = "org.luckypray", name = "dexkit", version.ref = "dexkit" }
+# 规则 JSON 序列化（对应 Dia 用的 fastjson；这里用 Gson 更通用稳定）
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+
+# ===== Jetpack Compose / Material3 =====
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeCompose" }
+
+# ===== libxposed 新 API 102（LSPosed）=====
+libxposed-api = { group = "io.github.libxposed", name = "api", version.ref = "libxposedApi" }
+libxposed-service = { group = "io.github.libxposed", name = "service", version.ref = "libxposedService" }
+
+# ===== 液态玻璃效果（Compose：blur + lens 折射 + vibrancy）=====
+backdrop = { group = "io.github.kyant0", name = "backdrop", version.ref = "backdrop" }
+kyant-shapes = { group = "io.github.kyant0", name = "shapes", version.ref = "kyantShapes" }
+# ===== Haze 毛玻璃（hazeBlur + HazeMaterials）=====
+haze = { group = "dev.chrisbanes.haze", name = "haze", version.ref = "haze" }
+haze-blur = { group = "dev.chrisbanes.haze", name = "haze-blur", version.ref = "haze" }
+haze-blur-materials = { group = "dev.chrisbanes.haze", name = "haze-blur-materials", version.ref = "haze" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# Kotlin 2.0+ 用独立的 Compose Compiler Gradle 插件（不再配 kotlinCompilerExtensionVersion）
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

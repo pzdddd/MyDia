@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  全局字符串。Compose UI 已把所有界面文案内联到 Kotlin（见 ui/prefs/PrefRegistry.kt），
+  这里只保留 AndroidManifest.xml 仍要引用的两项。
+-->
+<resources>
+    <string name="app_name">MyDia</string>
+    <string name="xposed_desc">我的对话框取消模块（Dia 复刻骨架）</string>
+</resources>

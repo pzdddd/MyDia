@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  应用窗口主题。Compose 时代窗口本身不画 UI（全交给 Compose），
+  故用一个纯系统 NoActionBar 主题给 ComponentActivity 用即可。
+  不依赖 AppCompat，减少跨版本兼容性问题；Material3 的实际配色在 ui/theme/Theme.kt 里。
+-->
+<resources>
+    <style name="Theme.MyDia" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar" />
+</resources>

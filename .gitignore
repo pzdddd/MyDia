@@ -1,0 +1,18 @@
+*.iml
+.gradle
+/local.properties
+local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+# IDE / 工具缓存
+.acside
+.zcode
+.kotlin
+
+# 模块构建产物
+app/build
