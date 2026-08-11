@@ -67,7 +67,15 @@ fun ConsoleLogScreen(onBack: () -> Unit) {
             delay(1000)
         }
     }
+    // 算法监控日志（MonitorLogStore，结构化数据：hex in/out/key/iv）——「算法」独立 tab
+    val algoLogs by produceState(com.pzdd.mydia.monitor.MonitorLogStore.snapshot()) {
+        while (true) {
+            value = com.pzdd.mydia.monitor.MonitorLogStore.snapshot()
+            delay(1000)
+        }
+    }
     var selected by remember { mutableStateOf<LogCategory?>(null) }  // null = 全部
+    var showAlgorithm by remember { mutableStateOf(false) }          // 算法独立页
     val context = LocalContext.current
 
     // 保存日志：SAF 让用户选保存位置（txt）
@@ -107,8 +115,11 @@ fun ConsoleLogScreen(onBack: () -> Unit) {
             IconButton(onClick = { saveLauncher.launch("mydia_log_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.txt") }) {
                 Icon(Icons.Filled.Save, contentDescription = "保存日志")
             }
-            // 清除日志
-            IconButton(onClick = { ConsoleLogStore.clear() }) {
+            // 清除日志（含算法记录）
+            IconButton(onClick = {
+                ConsoleLogStore.clear()
+                com.pzdd.mydia.monitor.MonitorLogStore.clear()
+            }) {
                 Icon(Icons.Filled.Delete, contentDescription = "清除日志")
             }
         },
@@ -121,16 +132,58 @@ fun ConsoleLogScreen(onBack: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 item {
-                    CategoryChip(label = "全部", count = logs.size, selected = selected == null) { selected = null }
+                    CategoryChip(label = "全部", count = logs.size, selected = selected == null && !showAlgorithm) { selected = null; showAlgorithm = false }
+                }
+                // 算法独立页（结构化：hex in/out/key/iv）
+                item {
+                    CategoryChip(label = "算法", count = algoLogs.size, selected = showAlgorithm) {
+                        showAlgorithm = true; selected = null
+                    }
                 }
                 items(LogCategory.entries.toList()) { cat ->
                     CategoryChip(label = cat.label, count = counts[cat] ?: 0, selected = selected == cat) {
-                        selected = cat
+                        selected = cat; showAlgorithm = false
                     }
                 }
             }
 
-            if (filtered.isEmpty()) {
+            if (showAlgorithm) {
+                // ===== 算法独立页：哈希/密钥哈希/加解密/签名 的结构化记录 =====
+                if (algoLogs.isEmpty()) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            "暂无算法记录。\n\n请在该 App 的高级功能里打开「算法监控」，\n然后触发一次加解密 / 签名 / Base64 调用。",
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(16.dp),
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp),
+                    ) {
+                        items(algoLogs) { rec ->
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 3.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.surface,
+                                border = BorderStroke(0.5.dp, Color(0xFF66BB6A).copy(alpha = 0.4f)),
+                            ) {
+                                Text(
+                                    text = rec.format(),
+                                    modifier = Modifier.padding(12.dp),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontFamily = FontFamily.Monospace,
+                                )
+                            }
+                        }
+                    }
+                }
+            } else if (filtered.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
                         text = if (logs.isEmpty()) {
