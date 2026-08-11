@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.pzdd.mydia.ui.theme.MyDiaTheme
+import com.pzdd.mydia.ui.theme.MyDiaAppTheme
 
 /**
  * 方法重写 · dex 源管理页（per-app）。
@@ -20,7 +20,7 @@ class DexPathListActivity : ComponentActivity() {
         val pkg = intent.getStringExtra("pkg") ?: ""
         enableEdgeToEdge()
         setContent {
-            MyDiaTheme {
+            MyDiaAppTheme {
                 DexPathListScreen(pkg = pkg, onBack = { finish() })
             }
         }

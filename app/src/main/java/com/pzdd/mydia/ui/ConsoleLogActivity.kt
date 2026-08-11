@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.pzdd.mydia.ui.theme.MyDiaTheme
+import com.pzdd.mydia.ui.theme.MyDiaAppTheme
 
 /**
  * 远程日志控制台展示页。
@@ -15,7 +15,7 @@ class ConsoleLogActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MyDiaTheme {
+            MyDiaAppTheme {
                 ConsoleLogScreen(onBack = { finish() })
             }
         }

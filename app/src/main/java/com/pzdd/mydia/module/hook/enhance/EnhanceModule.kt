@@ -10,10 +10,13 @@ import de.robv.android.xposed.XposedBridge
  * 增强模式总入口。对应 Dia 的 mod_ex 总开关 + otherModEx()（MTProtector 加密部分）。
  *
  * 职责：
- *  1. 读 per-app prefs 的 mod_ex 总开关；关了就一个子 hook 都不装
- *  2. 缓存 Application Context（[ApplicationContextHolder]）
- *  3. 按顺序注册所有增强子 hook（对话框/按钮/Activity 三大类）
- *  4. 把 KeyTriggerHook 与 AlertDisableHook 互相关联（按键能 toggle alert）
+ *  1. 缓存 Application Context（[ApplicationContextHolder]）
+ *  2. 按顺序注册所有增强子 hook（对话框/按钮/Activity 三大类）
+ *  3. 把 KeyTriggerHook 与 AlertDisableHook 互相关联（按键能 toggle alert）
+ *
+ * 【解耦说明】mod_ex 不再作为硬门控：对话框/按钮/活动界面各子 hook
+ * 在 installImpl 里读自己的 SP key（alert / hide_btn / app_entry …）独立生效，
+ * 无需先开增强模式总开关。mod_ex 开关已从 UI 移除。
  *
  * 加新增强功能 = 新建 XxxHook extends [DiaHookEntry] + 这里 register 一行。
  *
@@ -26,12 +29,9 @@ import de.robv.android.xposed.XposedBridge
 class EnhanceModule : DiaHook(), ApplicationHook.OnAppReady {
 
     override fun install() {
-        // mod_ex 总开关：关了整个增强模式都不加载（per-app SP）
-        if (!prefs.getBoolean("mod_ex", false)) {
-            Module.log("EnhanceModule: mod_ex disabled, skip all enhance hooks")
-            return
-        }
-        Module.log("EnhanceModule: mod_ex ON, waiting for Application ready...")
+        // 无条件等待 Application 就绪后注册全部增强子 hook——
+        // 每个子 hook 靠自己的 SP 开关（alert/hide_btn/...）独立生效
+        Module.log("EnhanceModule: waiting for Application ready...")
         DiaHook.get(ApplicationHook::class.java)?.addOnAppReady(this)
     }
 

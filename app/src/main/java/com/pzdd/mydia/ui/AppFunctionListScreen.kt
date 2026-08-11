@@ -23,6 +23,8 @@ import androidx.compose.ui.platform.LocalContext
 import com.pzdd.mydia.ui.prefs.LocalPrefs
 import com.pzdd.mydia.ui.prefs.Pref
 import com.pzdd.mydia.ui.prefs.PrefGroupedColumn
+import com.pzdd.mydia.ui.prefs.PrefRegistry
+import com.pzdd.mydia.ui.prefs.flattenWithoutLeadingHeader
 import com.pzdd.mydia.ui.prefs.rememberAppSp
 import kotlinx.coroutines.launch
 
@@ -112,6 +114,16 @@ fun AppFunctionListScreen(
                 ),
                 Pref.Switch("disable_exit", "禁止退出 App", summary = "防止不适配/检测异常就自动退出（拦 finish / System.exit / 退后台）", default = false),
                 Pref.Switch("disable_toast", "禁用 Toast", default = false),
+                // ===== 增强模式三分类平铺（对话框/按钮/活动界面）=====
+                // 与 PrefRegistry.dialog/button/activity 共用同一批 SP key——
+                // 这里开的开关，增强模式详情页里同一个开关也亮着（状态共享）。
+                // hook 侧已解除 mod_ex 门控，开关独立生效，无需先开增强模式总开关。
+                Pref.Header("对话框"),
+                *PrefRegistry.dialog.flattenWithoutLeadingHeader().toTypedArray(),
+                Pref.Header("按钮"),
+                *PrefRegistry.button.flattenWithoutLeadingHeader().toTypedArray(),
+                Pref.Header("活动界面"),
+                *PrefRegistry.activity.flattenWithoutLeadingHeader().toTypedArray(),
                 Pref.Header("高级功能"),
                 Pref.Switch(
                     "method_rewrite",
@@ -166,16 +178,10 @@ fun AppFunctionListScreen(
                     dependency = "code_inject",
                 ),
                 Pref.Header("增强模式"),
-                Pref.Switch(
-                    "mod_ex",
-                    "增强模式总开关",
-                    summary = "对话框/按钮/活动 + 六大扩展分类（模拟伪装/通知/反检测/大杂烩/高级/开发者）",
-                    default = false,
-                ),
                 Pref.Action(
                     "open_enhance",
                     "配置增强模式",
-                    summary = "进入 9 大分类详细配置",
+                    summary = "进入 9 大分类详细配置（对话框/按钮/活动已平铺在上方，此处是其余六大扩展分类）",
                     icon = Icons.Filled.Refresh,
                     onClick = onOpenEnhance,
                 ),

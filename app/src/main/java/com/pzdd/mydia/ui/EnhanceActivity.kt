@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.pzdd.mydia.ui.theme.MyDiaTheme
+import com.pzdd.mydia.ui.theme.MyDiaAppTheme
 
 /**
  * 增强模式目录页（per-app）。intent extra "pkg" = 目标 App 包名。
@@ -19,7 +19,7 @@ class EnhanceActivity : ComponentActivity() {
         val pkg = intent.getStringExtra("pkg") ?: ""
         enableEdgeToEdge()
         setContent {
-            MyDiaTheme {
+            MyDiaAppTheme {
                 EnhanceScreen(
                     pkg = pkg,
                     onBack = { finish() },

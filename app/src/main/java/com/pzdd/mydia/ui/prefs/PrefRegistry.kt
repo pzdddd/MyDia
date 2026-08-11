@@ -440,3 +440,11 @@ object PrefRegistry {
     fun byKey(key: String): PrefScreen? =
         (enhanceCategories + basicDialog).firstOrNull { it.key == key }
 }
+
+/**
+ * 把分类页平铺到其它列表时使用：去掉开头的分类标题 [Pref.Header]（如"对话框"），
+ * 因为它与平铺处的外层大标题重复，连续两个 Header 会产生一个空 Section（空卡片 + 悬空标题）。
+ * 保留内部的子标题（如"自动点击按钮"），用于平铺后的二次分组。
+ */
+fun PrefScreen.flattenWithoutLeadingHeader(): List<Pref> =
+    if (items.firstOrNull() is Pref.Header) items.drop(1) else items

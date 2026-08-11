@@ -6,8 +6,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.pzdd.mydia.ui.prefs.PREFS_GLOBAL
 import com.pzdd.mydia.ui.miuix.MiuixColors as Miuix
 
 /**
@@ -23,6 +25,29 @@ import com.pzdd.mydia.ui.miuix.MiuixColors as Miuix
  *
  * 色值对照见 [MiuixColors]。
  */
+/**
+ * 独立页面（非 MainActivity）的统一主题入口：读取全局 SP 的
+ * `ui_theme`（system/light/dark）与 `ui_dynamic_color`，和主界面保持完全一致。
+ *
+ * 修复：原来各独立 Activity（功能列表/增强模式/规则编辑/scope 等）裸调
+ * [MyDiaTheme] 只跟随系统——手动切「深色」后这些页面仍是亮色。
+ */
+@Composable
+fun MyDiaAppTheme(content: @Composable () -> Unit) {
+    val context = LocalContext.current
+    val sp = remember(context) {
+        context.getSharedPreferences(PREFS_GLOBAL, android.content.Context.MODE_PRIVATE)
+    }
+    val theme = sp.getString("ui_theme", "system") ?: "system"
+    val dynamic = sp.getBoolean("ui_dynamic_color", false)
+    val dark = when (theme) {
+        "light" -> false
+        "dark" -> true
+        else -> isSystemInDarkTheme()
+    }
+    MyDiaTheme(darkTheme = dark, dynamicColor = dynamic, content = content)
+}
+
 @Composable
 fun MyDiaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

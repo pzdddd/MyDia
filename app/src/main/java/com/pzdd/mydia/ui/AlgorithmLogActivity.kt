@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.pzdd.mydia.ui.theme.MyDiaTheme
+import com.pzdd.mydia.ui.theme.MyDiaAppTheme
 
 /**
  * 算法监控日志展示页（Compose 版）。每秒刷新 [com.pzdd.mydia.monitor.MonitorLogStore]。
@@ -15,7 +15,7 @@ class AlgorithmLogActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MyDiaTheme {
+            MyDiaAppTheme {
                 AlgorithmLogScreen(onBack = { finish() })
             }
         }

@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.pzdd.mydia.ui.theme.MyDiaTheme
+import com.pzdd.mydia.ui.theme.MyDiaAppTheme
 
 /**
  * 通用分类详情页（per-app）。9 个分类共用。
@@ -19,7 +19,7 @@ class CategoryActivity : ComponentActivity() {
         val cat = intent.getStringExtra("cat") ?: "dialog"
         enableEdgeToEdge()
         setContent {
-            MyDiaTheme {
+            MyDiaAppTheme {
                 CategoryScreen(pkg = pkg, cat = cat, onBack = { finish() })
             }
         }

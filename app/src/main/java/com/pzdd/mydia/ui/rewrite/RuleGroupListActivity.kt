@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.pzdd.mydia.ui.theme.MyDiaTheme
+import com.pzdd.mydia.ui.theme.MyDiaAppTheme
 
 /**
  * 方法重写 · 规则组列表页（per-app）。
@@ -21,7 +21,7 @@ class RuleGroupListActivity : ComponentActivity() {
         val pkg = intent.getStringExtra("pkg") ?: ""
         enableEdgeToEdge()
         setContent {
-            MyDiaTheme {
+            MyDiaAppTheme {
                 RuleGroupListScreen(
                     pkg = pkg,
                     onBack = { finish() },

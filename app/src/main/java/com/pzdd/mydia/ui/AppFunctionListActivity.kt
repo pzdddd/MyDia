@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.pzdd.mydia.ui.theme.MyDiaTheme
+import com.pzdd.mydia.ui.theme.MyDiaAppTheme
 
 /**
  * 某 App 的功能列表页（从「应用」Tab 点击某个 App 进入）。
@@ -22,7 +22,7 @@ class AppFunctionListActivity : ComponentActivity() {
             .getOrNull()?.let { packageManager.getApplicationLabel(it).toString() } ?: pkg
         enableEdgeToEdge()
         setContent {
-            MyDiaTheme {
+            MyDiaAppTheme {
                 AppFunctionListScreen(
                     pkg = pkg,
                     appLabel = label,

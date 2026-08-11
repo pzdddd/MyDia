@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.pzdd.mydia.ui.theme.MyDiaTheme
+import com.pzdd.mydia.ui.theme.MyDiaAppTheme
 
 /**
  * 方法重写 · 单条规则编辑页（per-app）。
@@ -23,7 +23,7 @@ class RuleEditActivity : ComponentActivity() {
         val ruleId = intent.getStringExtra("ruleId") ?: ""
         enableEdgeToEdge()
         setContent {
-            MyDiaTheme {
+            MyDiaAppTheme {
                 RuleEditScreen(
                     pkg = pkg,
                     groupId = groupId,

@@ -38,7 +38,7 @@ fun EnhanceScreen(
                     Pref.Switch(
                         key = "mod_ex",
                         title = "增强模式总开关",
-                        summary = "关闭后下方所有分类均不生效",
+                        summary = "已解耦：对话框/按钮/活动界面在功能列表页平铺独立生效，本开关仅保留兼容旧配置",
                         default = false,
                     ),
                 )
