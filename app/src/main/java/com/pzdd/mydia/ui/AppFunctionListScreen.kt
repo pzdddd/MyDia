@@ -108,7 +108,7 @@ fun AppFunctionListScreen(
                     summary = "hook Dialog.show，反射强制改 mCancelable",
                     default = true,
                 ),
-                Pref.Switch("disable_exit", "禁止退出 App", summary = "拦截 finish / System.exit", default = false),
+                Pref.Switch("disable_exit", "禁止退出 App", summary = "防止不适配/检测异常就自动退出（拦 finish / System.exit / 退后台）", default = false),
                 Pref.Switch("disable_toast", "禁用 Toast", default = false),
                 Pref.Header("高级功能"),
                 Pref.Switch(

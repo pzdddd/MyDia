@@ -282,7 +282,7 @@ object PrefRegistry {
             Pref.Switch("accelerometer", "加速度计", default = false, dependency = "sensor_disable"),
             Pref.Switch("gyroscope", "陀螺仪", default = false, dependency = "sensor_disable"),
             Pref.Header("禁止退出"),
-            Pref.Switch("exit", "禁止退出 App", summaryOn = "拦截 finish/System.exit", default = false),
+            Pref.Switch("exit", "禁止退出 App", summaryOn = "防止不适配/检测异常就自动退出（拦 finish / System.exit / 退后台）", default = false),
             Pref.ListChoice("exit_enabled", "按键触发切换", summary = "运行时按手势开关「禁止退出」", entries = TRIGGER_GESTURES, default = "-1", dependency = "exit"),
             Pref.Header("启动禁网"),
             Pref.Switch("network", "启动时短暂禁网", summaryOn = "启动后一段时间阻断网络", default = false),
