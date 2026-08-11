@@ -64,6 +64,7 @@ sealed class Pref {
         val title: String,
         val summary: String? = null,
         val icon: ImageVector? = null,
+        val dependency: String? = null,
         val onClick: () -> Unit,
     ) : Pref()
 }
@@ -75,7 +76,7 @@ val Pref.dependencyKey: String?
         is Pref.EditText -> dependency
         is Pref.ListChoice -> dependency
         is Pref.Header -> null
-        is Pref.Action -> null
+        is Pref.Action -> dependency
     }
 
 /**

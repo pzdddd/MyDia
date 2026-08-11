@@ -52,6 +52,11 @@ android {
     }
     ndkVersion = "27.1.12297006"
 
+    // ByteHook（PLT hook 库）通过 Prefab 暴露 native 头文件/库给 CMake
+    buildFeatures {
+        prefab = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -103,6 +108,10 @@ dependencies {
     implementation(libs.dexkit)
     // 规则 JSON 序列化（Dia 原版用 fastjson，这里用 Gson 更通用稳定）
     implementation(libs.gson)
+    // 类树浏览器：dex 解析（对齐 Dia 的 org.jf.dexlib2）
+    implementation(libs.dexlib2)
+    // ByteHook：PLT hook 库，让 native 层 hook 在目标进程真正生效
+    implementation(libs.bytehook)
 
     // ===== Jetpack Compose / Material3（全新 UI 框架）=====
     val composeBom = platform(libs.androidx.compose.bom)

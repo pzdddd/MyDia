@@ -18,7 +18,7 @@ import com.pzdd.mydia.ui.prefs.rememberGlobalSp
  * 注入侧不读，可随时改。
  */
 @Composable
-fun SettingsScreen(contentPadding: PaddingValues, onOpenConsole: () -> Unit = {}) {
+fun SettingsScreen(contentPadding: PaddingValues, onOpenConsole: () -> Unit = {}, onOpenScope: () -> Unit = {}) {
     val sp = rememberGlobalSp()
     val screen = PrefScreen(
         key = "settings",
@@ -30,6 +30,12 @@ fun SettingsScreen(contentPadding: PaddingValues, onOpenConsole: () -> Unit = {}
                 "启用模块",
                 summary = "Xposed 模块总入口（关闭后所有 App 都不被 hook）",
                 default = false,
+            ),
+            Pref.Action(
+                "open_scope",
+                "作用域管理",
+                summary = "查看/添加/移除被 hook 的 App（免手动去 LSPosed 勾选）",
+                onClick = onOpenScope,
             ),
             Pref.Header("日志"),
             Pref.Switch("log_console", "远程日志", summaryOn = "目标 App 里的模块日志广播回本控制台", default = false),

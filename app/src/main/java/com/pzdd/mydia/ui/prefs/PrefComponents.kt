@@ -73,6 +73,8 @@ private fun SwitchRow(pref: Pref.Switch, modifier: Modifier = Modifier) {
         trailingContent = {
             MiuixSwitch(checked = state.value, onCheckedChange = { state.value = it })
         },
+        // 整行点击翻转开关：让用户点标题/说明也能切换。
+        // 开关本身有自己的 clickable（子级先消费事件），不会双重翻转。
         modifier = modifier.clickable { state.value = !state.value },
     )
 }

@@ -32,6 +32,18 @@ class AppFunctionListActivity : ComponentActivity() {
                             Intent(this, EnhanceActivity::class.java).putExtra("pkg", pkg)
                         )
                     },
+                    onOpenRewriteRules = {
+                        startActivity(
+                            Intent(this, com.pzdd.mydia.ui.rewrite.RuleGroupListActivity::class.java)
+                                .putExtra("pkg", pkg)
+                        )
+                    },
+                    onOpenDexPaths = {
+                        startActivity(
+                            Intent(this, com.pzdd.mydia.ui.rewrite.DexPathListActivity::class.java)
+                                .putExtra("pkg", pkg)
+                        )
+                    },
                 )
             }
         }

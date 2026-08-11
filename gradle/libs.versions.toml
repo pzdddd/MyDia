@@ -25,6 +25,10 @@ backdrop = "1.0.6"
 kyantShapes = "1.2.0"
 # Haze：另一套毛玻璃（hazeBlur），渲染方式不同于 backdrop，验证长列表稳定性
 haze = "2.0.0-alpha04"
+# ByteHook：字节跳动 PLT hook 库（替代 Dia 的 Cydia Substrate，做真正的 GOT/PLT hook）
+bytehook = "1.1.2"
+# dexlib2：dex 解析（类树浏览器，对齐 Dia 的 org.jf.dexlib2）
+dexlib2 = "2.5.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -60,6 +64,11 @@ kyant-shapes = { group = "io.github.kyant0", name = "shapes", version.ref = "kya
 haze = { group = "dev.chrisbanes.haze", name = "haze", version.ref = "haze" }
 haze-blur = { group = "dev.chrisbanes.haze", name = "haze-blur", version.ref = "haze" }
 haze-blur-materials = { group = "dev.chrisbanes.haze", name = "haze-blur-materials", version.ref = "haze" }
+
+# ===== ByteHook（PLT hook，native 层真正生效的关键）=====
+bytehook = { group = "com.bytedance", name = "bytehook", version.ref = "bytehook" }
+# ===== dexlib2（dex 解析，类树浏览器用）=====
+dexlib2 = { group = "org.smali", name = "dexlib2", version = "2.5.1" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

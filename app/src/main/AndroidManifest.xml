@@ -93,6 +93,42 @@
             android:name=".ui.AppFunctionListActivity"
             android:exported="false"
             android:label="功能列表" />
+
+        <!-- ============ 方法重写：规则组列表页 ============ -->
+        <activity
+            android:name=".ui.rewrite.RuleGroupListActivity"
+            android:exported="false"
+            android:label="方法重写规则" />
+
+        <!-- ============ 方法重写：组内规则列表页 ============ -->
+        <activity
+            android:name=".ui.rewrite.RuleListActivity"
+            android:exported="false"
+            android:label="规则列表" />
+
+        <!-- ============ 方法重写：单条规则编辑页 ============ -->
+        <activity
+            android:name=".ui.rewrite.RuleEditActivity"
+            android:exported="false"
+            android:label="编辑规则" />
+
+        <!-- ============ 方法重写：dex 源管理页 ============ -->
+        <activity
+            android:name=".ui.rewrite.DexPathListActivity"
+            android:exported="false"
+            android:label="dex 源管理" />
+
+        <!-- ============ 方法重写：类树浏览器 ============ -->
+        <activity
+            android:name=".ui.rewrite.ClassTreeActivity"
+            android:exported="false"
+            android:label="类树浏览器" />
+
+        <!-- ============ LSPosed 作用域管理页 ============ -->
+        <activity
+            android:name=".ui.scope.ScopeActivity"
+            android:exported="false"
+            android:label="作用域管理" />
     </application>
 
 </manifest>

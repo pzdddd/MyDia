@@ -102,6 +102,9 @@ class MainActivity : ComponentActivity() {
                             onOpenConsole = {
                                 startActivity(Intent(this, ConsoleLogActivity::class.java))
                             },
+                            onOpenScope = {
+                                startActivity(Intent(this, com.pzdd.mydia.ui.scope.ScopeActivity::class.java))
+                            },
                             initialCrash = lastCrash,
                         )
                     }
@@ -115,6 +118,7 @@ class MainActivity : ComponentActivity() {
 private fun MainRoot(
     onOpenApp: (String) -> Unit,
     onOpenConsole: () -> Unit,
+    onOpenScope: () -> Unit,
     initialCrash: String? = null,
 ) {
     var showCrash by remember { mutableStateOf(initialCrash != null) }
@@ -148,7 +152,7 @@ private fun MainRoot(
                 when (tab) {
                     0 -> HomeScreen(padding)
                     1 -> AppsScreen(padding, onOpenApp = onOpenApp)
-                    2 -> SettingsScreen(padding, onOpenConsole = onOpenConsole)
+                    2 -> SettingsScreen(padding, onOpenConsole = onOpenConsole, onOpenScope = onOpenScope)
                 }
             }
 

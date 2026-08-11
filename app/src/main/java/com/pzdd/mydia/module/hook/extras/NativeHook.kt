@@ -26,6 +26,7 @@ class NativeHook : DiaHook() {
     private external fun nativeSetTimeOffset(ms: Long)
     private external fun nativeSetTimeFixed(ms: Long)
     private external fun nativeIsHooked(): Boolean
+    private external fun nativeSetDisableExit(enable: Boolean)
 
     override fun install() {
         if (!prefs.getBoolean("native_hook", false)) return
@@ -43,6 +44,15 @@ class NativeHook : DiaHook() {
             else nativeSetTimeOffset(diff)
             Module.log("NativeHook: native time hooked (fixed=$keepValue, offset=$diff)")
         }
+
+        // 联动 DisableExitHook：任一 exit 开关开启时，原生层也拦截 _exit/exit
+        // （Java 层 hook 挡不住 app 直接走 JNI native exit，需 native PLT hook 兜底）
+        val disableExit = prefs.getBoolean("disable_exit", false) || prefs.getBoolean("exit", false)
+        if (disableExit) {
+            nativeSetDisableExit(true)
+            Module.log("NativeHook: native exit block enabled")
+        }
+
         Module.log("NativeHook ACTIVE.")
     }
 }

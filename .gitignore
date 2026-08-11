@@ -16,3 +16,12 @@ local.properties
 
 # 模块构建产物
 app/build
+
+# frida-gadget so（体积大，不提交；用 scripts/download-frida-gadget.sh 下载）
+app/src/main/jniLibs/*/libfrida-gadget.so
+
+# Dia 逆向产物（dump_smali / 抽取的 apk / 工具，不提交）
+/dump_smali
+/dex_extracted
+/dia-23.11.apk
+/tools

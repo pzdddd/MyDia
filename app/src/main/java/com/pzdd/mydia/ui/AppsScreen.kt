@@ -162,6 +162,11 @@ fun AppsScreen(
                             // 同步到 LSPosed remote：注入侧常驻进程立刻读到（无需重启目标 App）
                             com.pzdd.mydia.module.RemotePrefsSync.syncLocal(sp)
                             switchState[app.pkg] = v
+                            // 打开开关时自动请求加入 LSPosed 作用域（免手动去设置页添加）。
+                            // 幂等：已在作用域 / 模块未激活时不弹。
+                            if (v) {
+                                com.pzdd.mydia.module.ScopeManager.requestScopeIfNeeded(app.pkg)
+                            }
                         },
                         onClick = { onOpenApp(app.pkg) },
                     )
@@ -190,45 +195,56 @@ private fun AppRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        // 图标
-        Box(
-            modifier = Modifier.size(44.dp),
-            contentAlignment = Alignment.Center,
+        // 图标 + 名称 + 包名：整体可点击进入功能列表。
+        // 【关键】clickable 只挂内容区、不挂整行——否则点开关时 down 事件
+        // 会和父级 clickable 竞争，导致「关开关」同时触发跳转到功能列表。
+        // 开关区天然独立：点开关只切开关，点文字/图标才进详情。
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .clickable(onClick = onClick),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            if (iconBmp != null) {
-                Image(iconBmp!!, contentDescription = null, modifier = Modifier.size(44.dp))
-            } else {
-                Box(
-                    Modifier.size(44.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp)
-                        )
+            // 图标
+            Box(
+                modifier = Modifier.size(44.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (iconBmp != null) {
+                    Image(iconBmp!!, contentDescription = null, modifier = Modifier.size(44.dp))
+                } else {
+                    Box(
+                        Modifier.size(44.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp)
+                            )
+                    )
+                }
+            }
+            // 名称 + 包名
+            Column {
+                Text(
+                    app.label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    app.pkg,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
-        // 名称 + 包名
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                app.label,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                app.pkg,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        // per-app 开关
+        // per-app 开关（独立，不与内容区共享点击）
         MiuixSwitch(checked = enabled, onCheckedChange = onToggle)
     }
 }

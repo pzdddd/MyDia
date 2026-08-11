@@ -48,6 +48,8 @@ fun AppFunctionListScreen(
     appLabel: String,
     onBack: () -> Unit,
     onOpenEnhance: () -> Unit,
+    onOpenRewriteRules: () -> Unit = {},
+    onOpenDexPaths: () -> Unit = {},
 ) {
     val sp = rememberAppSp(pkg)
     val context = LocalContext.current
@@ -116,6 +118,20 @@ fun AppFunctionListScreen(
                     "方法重写引擎",
                     summary = "按规则改写目标方法返回值/参数",
                     default = false,
+                ),
+                Pref.Action(
+                    "open_rewrite_rules",
+                    "配置重写规则",
+                    summary = "编辑规则组 / 规则 / 改写动作",
+                    dependency = "method_rewrite",
+                    onClick = onOpenRewriteRules,
+                ),
+                Pref.Action(
+                    "open_dex_paths",
+                    "dex 源管理",
+                    summary = "配置类树浏览器解析的 dex/apk",
+                    dependency = "method_rewrite",
+                    onClick = onOpenDexPaths,
                 ),
                 Pref.Switch(
                     "shell_monitor",
