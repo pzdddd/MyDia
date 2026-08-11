@@ -230,12 +230,12 @@ object McpTools {
             remote.edit().putString("mcp_command", cmd.toString()).commit()
         }.onFailure { return@McpTool err("写命令失败: ${it.message}") }
 
-        // 2) 轮询结果（最长等待 timeoutMs + 2s）
         val deadline = System.currentTimeMillis() + timeoutMs + 2000
         var result: String? = null
         while (System.currentTimeMillis() < deadline) {
-            val r = runCatching { remote.getString("mcp_result", null) }.getOrNull()
-            if (r != null && r.contains("\"id\":\"$id\"")) { result = r; break }
+            // 结果由注入侧广播回传 → McpResultStore（注入侧无法写 remote，见 McpCommandHook）
+            val r = com.pzdd.mydia.monitor.McpResultStore.get(id)
+            if (r != null) { result = r; break }
             try { Thread.sleep(300) } catch (_: InterruptedException) { break }
         }
         if (result == null) return@McpTool err("观察超时（目标 App 可能未注入，或 ${className}.$methodName 未被调用）")
@@ -332,8 +332,9 @@ object McpTools {
         val deadline = System.currentTimeMillis() + timeoutMs + 2000
         var result: String? = null
         while (System.currentTimeMillis() < deadline) {
-            val r = runCatching { remote.getString("mcp_result", null) }.getOrNull()
-            if (r != null && r.contains("\"id\":\"$id\"")) { result = r; break }
+            // 结果由注入侧广播回传 → McpResultStore
+            val r = com.pzdd.mydia.monitor.McpResultStore.get(id)
+            if (r != null) { result = r; break }
             try { Thread.sleep(300) } catch (_: InterruptedException) { break }
         }
         return if (result == null) err(timeoutMsg) else text(result!!)

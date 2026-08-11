@@ -41,9 +41,12 @@ fun SettingsScreen(contentPadding: PaddingValues, onOpenConsole: () -> Unit = {}
     val sp = rememberGlobalSp()
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    // MCP 开关状态：开→启动前台服务，关→停止（与设置项联动）
+    // MCP 开关状态：开→启动前台服务，关→停止（与设置项联动）。
+    // 监听 lan/port 变化：服务在跑时重新绑定（切局域网开关 / 改端口即时生效）
     val mcpEnabled = rememberBoolPref("mcp_enabled", false)
-    LaunchedEffect(mcpEnabled.value) {
+    val mcpLanOn = rememberBoolPref("mcp_bind_lan", false).value
+    val mcpPort = sp.getString("mcp_port", "8090") ?: "8090"
+    LaunchedEffect(mcpEnabled.value, mcpLanOn, mcpPort) {
         if (mcpEnabled.value) com.pzdd.mydia.module.mcp.McpServerService.start(context)
         else com.pzdd.mydia.module.mcp.McpServerService.stop(context)
     }
@@ -55,9 +58,7 @@ fun SettingsScreen(contentPadding: PaddingValues, onOpenConsole: () -> Unit = {}
             delay(5000)
         }
     }
-    val mcpLanOn = rememberBoolPref("mcp_bind_lan", false).value
-    val mcpPort = sp.getString("mcp_port", "8090") ?: "8090"
-    val mcpAddr = if (mcpLanOn) "http://$lanIpState:$mcpPort/mcp" else "adb forward tcp:$mcpPort tcp:$mcpPort → http://localhost:$mcpPort/mcp"
+    val mcpAddr = if (mcpLanOn) "http://$lanIpState:$mcpPort/mcp（本机 http://127.0.0.1:$mcpPort/mcp 也可连）" else "adb forward tcp:$mcpPort tcp:$mcpPort → http://localhost:$mcpPort/mcp"
 
     val screen = PrefScreen(
         key = "settings",

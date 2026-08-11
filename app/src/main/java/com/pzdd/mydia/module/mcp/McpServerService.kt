@@ -50,14 +50,20 @@ class McpServerService : Service() {
     }
 
     private fun startMcpServer(sp: android.content.SharedPreferences) {
-        if (server?.isRunning == true) return
         val lan = sp.getBoolean("mcp_bind_lan", false)
         val port = sp.getInt("mcp_port", 8090).coerceIn(1024, 65535)
         val host = if (lan) "0.0.0.0" else "127.0.0.1"
+        // 服务在跑但绑定地址/端口与当前配置不符 → 重启重新绑定
+        // （切局域网开关 / 改端口后生效；0.0.0.0 绑定同时覆盖本机 127.0.0.1 与局域网 IP）
+        if (server?.isRunning == true) {
+            if (server?.boundAddress == "$host:$port") return
+            server?.stop()
+            server = null
+        }
         val s = McpServer(this, host, port)
         s.start()
         server = s
-        updateNotification(if (lan) "MCP: ${host}:$port（局域网）" else "MCP: ${host}:$port（adb forward）")
+        updateNotification(if (lan) "MCP: ${host}:$port（局域网，本机 127.0.0.1 也可连）" else "MCP: ${host}:$port（adb forward）")
     }
 
     override fun onDestroy() {

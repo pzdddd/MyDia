@@ -33,6 +33,10 @@ class McpCommandHook : DiaHook(), ApplicationHook.OnAppReady {
     }
 
     override fun onReady(ctx: Context) {
+        // 全局单例存 context：Application.attach 阶段的 ctx.applicationContext 是 null（未初始化），
+        // 直接用 ctx 本身（base context，sendBroadcast/loadLibrary 都可用）
+        appContext = ctx
+        Module.log("McpCommandHook: onReady ctx set=$ctx this=$this")
         runCatching {
             val thread = Thread({ loop(ctx) }, "mcp-command")
             thread.isDaemon = true
@@ -75,8 +79,8 @@ class McpCommandHook : DiaHook(), ApplicationHook.OnAppReady {
         when (action) {
             "hook_observe" -> observe(ctx, id, cmd)
             "print_stack" -> printStack(ctx, id, cmd)
-            "list_loaded_so" -> writeResult(id, listLoadedSo())
-            "list_dex_files" -> writeResult(id, listDexFiles())
+            "list_loaded_so" -> writeResult(id, listLoadedSo(id))
+            "list_dex_files" -> writeResult(id, listDexFiles(id))
             else -> writeResult(id, JsonObject().apply { addProperty("error", "unknown action: $action") })
         }
     }
@@ -121,7 +125,7 @@ class McpCommandHook : DiaHook(), ApplicationHook.OnAppReady {
     }
 
     /** list_loaded_so：读 /proc/self/maps 里的 so 库路径（去重、去系统库）。 */
-    private fun listLoadedSo(): JsonObject {
+    private fun listLoadedSo(id: String): JsonObject {
         val sos = LinkedHashSet<String>()
         runCatching {
             java.io.File("/proc/self/maps").readLines().forEach { line ->
@@ -137,7 +141,7 @@ class McpCommandHook : DiaHook(), ApplicationHook.OnAppReady {
         val arr = JsonArray()
         sos.forEach { arr.add(it) }
         return JsonObject().apply {
-            addProperty("id", "list_loaded_so")
+            addProperty("id", id)
             addProperty("status", "done")
             addProperty("count", sos.size)
             add("so", arr)
@@ -145,16 +149,17 @@ class McpCommandHook : DiaHook(), ApplicationHook.OnAppReady {
     }
 
     /** list_dex_files：枚举 PathClassLoader 的 DexPathList 里的 dex 路径。 */
-    private fun listDexFiles(): JsonObject {
+    private fun listDexFiles(id: String): JsonObject {
         val dexes = LinkedHashSet<String>()
         runCatching {
             val cl = Module.classLoader
-            val pathList = cl?.javaClass?.getDeclaredField("pathList")?.apply { isAccessible = true }?.get(cl)
-            val dexElements = pathList?.javaClass?.getDeclaredField("dexElements")?.apply { isAccessible = true }?.get(pathList)
+            // 兼容不同 Android 版本的字段名（BaseDexClassLoader.pathList / DexPathList.dexElements / Element.file）
+            val pathList = findField(cl, "pathList")?.get(cl) ?: return@runCatching
+            val dexElements = findField(pathList, "dexElements")?.get(pathList)
             if (dexElements is Array<*>) {
                 dexElements.forEach { el ->
                     runCatching {
-                        val file = el?.javaClass?.getDeclaredField("file")?.apply { isAccessible = true }?.get(el)
+                        val file = findField(el, "file")?.get(el)
                         if (file is java.io.File) dexes.add(file.absolutePath)
                     }
                 }
@@ -163,11 +168,26 @@ class McpCommandHook : DiaHook(), ApplicationHook.OnAppReady {
         val arr = JsonArray()
         dexes.forEach { arr.add(it) }
         return JsonObject().apply {
-            addProperty("id", "list_dex_files")
+            addProperty("id", id)
             addProperty("status", "done")
             addProperty("count", dexes.size)
             add("dex", arr)
         }
+    }
+
+    /** 递归在类/父类里找字段（兼容不同 Android 版本的字段命名）。 */
+    private fun findField(obj: Any?, name: String): java.lang.reflect.Field? {
+        if (obj == null) return null
+        var cls: Class<*>? = obj.javaClass
+        while (cls != null) {
+            try {
+                val f = cls.getDeclaredField(name).apply { isAccessible = true }
+                return f
+            } catch (_: NoSuchFieldException) {
+                cls = cls.superclass
+            }
+        }
+        return null
     }
 
     /** hook_observe：hook 指定方法，观察 window 内调用。 */
@@ -262,12 +282,30 @@ class McpCommandHook : DiaHook(), ApplicationHook.OnAppReady {
 
     // ==================== 结果回传 ====================
 
-    /** 写结果到 remote prefs 的 `mcp_result`（组名 = 目标包名），MCP 侧轮询读回。 */
+    /**
+     * 写结果：注入侧无法写 remote prefs（libxposed 对注入侧是只读投影，
+     * edit().commit() 抛 UnsupportedOperationException: Read only implementation），
+     * 改用广播回传 MyDia 进程（McpResultReceiver → McpResultStore，MCP server 轮询）。
+     */
     private fun writeResult(id: String, payload: JsonObject) {
         runCatching {
-            val remote = LibXposedEntry.instance?.getRemotePreferences(Module.packageName) ?: return
             payload.addProperty("id", id)
-            remote.edit().putString(KEY_RESULT, GsonBuilder().create().toJson(payload)).commit()
+            val json = GsonBuilder().create().toJson(payload)
+            val intent = android.content.Intent(com.pzdd.mydia.monitor.McpResultReceiver.ACTION).apply {
+                setPackage("com.pzdd.mydia")
+                putExtra("id", id)
+                putExtra("result", json)
+            }
+            // 用缓存的 application context 发广播（无需 Module 存 context）
+            val appCtx = appContext
+            if (appCtx != null) {
+                appCtx.sendBroadcast(intent)
+                Module.log("McpCommandHook: result sent via broadcast id=$id len=${json.length}")
+            } else {
+                Module.log("McpCommandHook: writeResult appContext null this=$this")
+            }
+        }.onFailure { e ->
+            Module.log("McpCommandHook: writeResult EXC ${e.javaClass.simpleName}: ${e.message}")
         }
     }
 
@@ -276,5 +314,9 @@ class McpCommandHook : DiaHook(), ApplicationHook.OnAppReady {
         const val KEY_COMMAND = "mcp_command"
         /** 注入侧写结果的 key（remote prefs，组名 = 目标包名）。 */
         const val KEY_RESULT = "mcp_result"
+
+        /** 注入侧缓存的 application context（全局静态：发结果广播用，防实例分裂）。 */
+        @Volatile
+        var appContext: Context? = null
     }
 }

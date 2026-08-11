@@ -71,6 +71,15 @@
             </intent-filter>
         </receiver>
 
+        <!-- ============ MCP 工具结果回传（注入侧 McpCommandHook 广播） ============ -->
+        <receiver
+            android:name=".monitor.McpResultReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.pzdd.mydia.ACTION_MCP_RESULT" />
+            </intent-filter>
+        </receiver>
+
         <!-- ============ 算法监控日志查看页 ============ -->
         <activity
             android:name=".ui.AlgorithmLogActivity"
