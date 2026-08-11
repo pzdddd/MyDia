@@ -24,6 +24,8 @@ class ObjectInfo(
         private set
     @Volatile var iv: ByteArray? = null           // Cipher 的 IV（如记录）
         private set
+    @Volatile var opMode: Int = -1                // Cipher.init 的 opmode（ENCRYPT=1/DECRYPT=2）
+        private set
     @Volatile var stack: String = ""              // 调用栈（可选）
 
     fun setData(b: ByteArray?) { if (b != null) data = b.copyOf() }
@@ -42,6 +44,7 @@ class ObjectInfo(
     }
     fun setKey(b: ByteArray?) { if (b != null) key = b.copyOf() }
     fun setIv(b: ByteArray?) { if (b != null) iv = b.copyOf() }
+    fun setOpMode(mode: Int) { if (mode >= 0) opMode = mode }
 
     /** 有可用数据才上报（对齐 Dia 的上报门槛） */
     fun hasPayload(): Boolean =

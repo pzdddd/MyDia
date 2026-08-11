@@ -32,6 +32,7 @@ fun CategoryScreen(
     onOpenDexPaths: () -> Unit = {},
     onOpenFridaScripts: () -> Unit = {},
     onOpenConsole: () -> Unit = {},
+    onOpenAlgorithmLog: () -> Unit = {},
 ) {
     val sp = rememberAppSp(pkg)
     val screen = PrefRegistry.byKey(cat)
@@ -61,6 +62,7 @@ fun CategoryScreen(
                 "open_dex_paths" -> item.copy(onClick = onOpenDexPaths)
                 "open_frida_scripts" -> item.copy(onClick = onOpenFridaScripts)
                 "open_console" -> item.copy(onClick = onOpenConsole)
+                "open_algorithm_log" -> item.copy(onClick = onOpenAlgorithmLog)
                 else -> item
             }
             else -> item

@@ -65,6 +65,16 @@ object AlgorithmHookManager {
         XposedBridge.hookAllMethods(Cipher::class.java, "doFinal", hook)
         XposedBridge.hookAllMethods(Cipher::class.java, "init", hook)
 
+        // Signature（签名/验签，对齐算法助手的「签名」监控）
+        runCatching {
+            XposedBridge.hookAllMethods(java.security.Signature::class.java, "getInstance", hook)
+            XposedBridge.hookAllMethods(java.security.Signature::class.java, "update", hook)
+            XposedBridge.hookAllMethods(java.security.Signature::class.java, "sign", hook)
+            XposedBridge.hookAllMethods(java.security.Signature::class.java, "verify", hook)
+            XposedBridge.hookAllMethods(java.security.Signature::class.java, "initSign", hook)
+            XposedBridge.hookAllMethods(java.security.Signature::class.java, "initVerify", hook)
+        }
+
         // Base64（用精确签名，避免 hook 到内部重载）
         val intCls = Int::class.javaPrimitiveType
         try {
@@ -112,16 +122,25 @@ object AlgorithmHookManager {
                 putExtra("thread", Thread.currentThread().name)
                 putExtra("stack", info.stack)
                 putExtra("al_name", info.name)
-                info.data?.let { putExtra("al_data", Base64.encodeToString(it, Base64.NO_WRAP)) }
-                info.ret?.let { putExtra("return", Base64.encodeToString(it, Base64.NO_WRAP)) }
-                info.key?.let { putExtra("al_key", Base64.encodeToString(it, Base64.NO_WRAP)) }
-                info.iv?.let { putExtra("al_iv", Base64.encodeToString(it, Base64.NO_WRAP)) }
+                info.data?.let { putExtra("al_data", b64(it)) }
+                info.ret?.let { putExtra("return", b64(it)) }
+                info.key?.let { putExtra("al_key", b64(it)) }
+                info.iv?.let { putExtra("al_iv", b64(it)) }
+                if (info.opMode >= 0) putExtra("al_opmode", info.opMode)
             }
             app.sendBroadcast(intent)
         } catch (t: Throwable) {
             Module.err("AlgorithmHookManager sendBroadcast failed", t)
         }
     }
+
+    /**
+     * Base64 编码（避免递归）：不能用 android.util.Base64——它被本模块 hook 了，
+     * 编码时会再次触发 handleBase64 → 无限递归刷屏（之前 logcat 的 Base64 递归堆栈）。
+     * 用 java.util.Base64（API 26+，不受 hook 影响）。
+     */
+    private fun b64(b: ByteArray): String =
+        java.util.Base64.getEncoder().encodeToString(b)
 
     /** 反射拿 ActivityThread.currentApplication()（注入侧没有直接的 Application 引用） */
     private fun currentApplication(): Application? = runCatching {
@@ -144,6 +163,7 @@ object AlgorithmHook : XC_MethodHook() {
                 // 建立对象 ↔ 算法名映射（实际关联在 after 里拿 result 做）
             }
             "init" -> handleInit(param)
+            "initSign", "initVerify" -> handleInit(param)
             "update" -> handleUpdate(param)
         }
     }
@@ -157,6 +177,8 @@ object AlgorithmHook : XC_MethodHook() {
             }
             "digest" -> handleDigest(param)
             "doFinal" -> handleDoFinal(param)
+            "sign" -> handleSignatureResult(param)
+            "verify" -> handleSignatureVerify(param)
             "encode", "decode" -> handleBase64(param, name)
         }
     }
@@ -166,14 +188,40 @@ object AlgorithmHook : XC_MethodHook() {
         val info = AlgorithmHookManager.infoOf(obj) ?: return
         when (obj) {
             is Cipher -> {
-                // Cipher.init(opmode, key, ...) —— key 在 args[1]
+                // Cipher.init(opmode, key, ...) —— opmode 在 args[0]，key 在 args[1]
+                (param.args.getOrNull(0) as? Int)?.let { info.setOpMode(it) }
                 (param.args.getOrNull(1) as? java.security.Key)?.encoded?.let { info.setKey(it) }
+                // 带 IV 的重载：init(opmode, key, AlgorithmParameterSpec) 或 init(opmode, key, IvParameterSpec)
+                (param.args.getOrNull(2) as? javax.crypto.spec.IvParameterSpec)?.iv?.let { info.setIv(it) }
             }
             is Mac -> {
                 // Mac.init(key) —— key 在 args[0]
                 (param.args.getOrNull(0) as? java.security.Key)?.encoded?.let { info.setKey(it) }
             }
+            is java.security.Signature -> {
+                // Signature.initSign(PrivateKey) / initVerify(PublicKey)
+                (param.args.getOrNull(0) as? java.security.Key)?.encoded?.let { info.setKey(it) }
+            }
         }
+    }
+
+    /** Signature.sign() 出结果（签名值）。 */
+    private fun handleSignatureResult(param: MethodHookParam) {
+        val obj = param.thisObject as? java.security.Signature ?: return
+        val info = AlgorithmHookManager.infoOf(obj) ?: return
+        info.stack = android.util.Log.getStackTraceString(Throwable("algorithm monitor"))
+        info.setReturn(param.result as? ByteArray)
+        AlgorithmHookManager.reportAndConsume(obj)
+    }
+
+    /** Signature.verify(ByteArray) 验签——记录被验的签名（作为 data）。 */
+    private fun handleSignatureVerify(param: MethodHookParam) {
+        val obj = param.thisObject as? java.security.Signature ?: return
+        val info = AlgorithmHookManager.infoOf(obj) ?: return
+        info.stack = android.util.Log.getStackTraceString(Throwable("algorithm monitor"))
+        (param.args.getOrNull(0) as? ByteArray)?.let { info.setData(it) }
+        // verify 返回 boolean（result 是 Boolean），记录到 ret 的意义不大，但保留调用记录
+        AlgorithmHookManager.reportAndConsume(obj)
     }
 
     private fun handleUpdate(param: MethodHookParam) {

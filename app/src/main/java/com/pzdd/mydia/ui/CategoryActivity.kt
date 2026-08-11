@@ -52,6 +52,9 @@ class CategoryActivity : ComponentActivity() {
                     onOpenConsole = {
                         startActivity(Intent(this, ConsoleLogActivity::class.java))
                     },
+                    onOpenAlgorithmLog = {
+                        startActivity(Intent(this, AlgorithmLogActivity::class.java))
+                    },
                 )
             }
         }

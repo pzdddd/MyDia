@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.Masks
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Rule
@@ -524,8 +525,16 @@ object PrefRegistry {
             Pref.Switch(
                 "algorithm_monitor",
                 "算法监控",
-                summary = "hook MD5/AES/HMAC/Base64，记录输入输出",
+                summary = "hook MD5/SHA/HMAC/AES/DES/Signature/Base64，记录输入输出密钥 IV",
                 default = false,
+            ),
+            Pref.Action(
+                "open_algorithm_log",
+                "查看算法日志",
+                summary = "哈希 / 密钥哈希 / 加解密 / 签名 调用记录",
+                icon = Icons.Filled.Functions,
+                dependency = "algorithm_monitor",
+                onClick = {},
             ),
         ),
     )

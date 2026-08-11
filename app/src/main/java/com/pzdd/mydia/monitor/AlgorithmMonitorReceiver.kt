@@ -36,6 +36,7 @@ class AlgorithmMonitorReceiver : BroadcastReceiver() {
             ret = intent.b64("return"),
             key = intent.b64("al_key"),
             iv = intent.b64("al_iv"),
+            opMode = intent.getIntExtra("al_opmode", -1),
         )
         MonitorLogStore.append(context, info)
     }
@@ -57,11 +58,15 @@ data class MonitorRecord(
     val ret: ByteArray?,
     val key: ByteArray?,
     val iv: ByteArray?,
+    val opMode: Int,
 ) {
     fun format(): String {
         val ts = SimpleDateFormat("HH:mm:ss.SSS", Locale.US).format(Date(time))
         return buildString {
-            append("[$ts] $algo  pkg=$pkg proc=$process tid=$thread\n")
+            append("[$ts] $algo  pkg=$pkg proc=$process tid=$thread")
+            if (opMode == 1) append(" [加密]")
+            if (opMode == 2) append(" [解密]")
+            append('\n')
             data?.let { append("  in  : ").append(bytesToHex(it, 256)).append('\n') }
             ret?.let { append("  out : ").append(bytesToHex(it, 256)).append('\n') }
             key?.let { append("  key : ").append(bytesToHex(it, 256)).append('\n') }
