@@ -9,7 +9,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -202,16 +201,14 @@ fun MiuixNavBar(
         Box(modifier = sliderMod)
 
         // ==================== [图层3] 图标与文字 ====================
+        // 点击由 [图层4] 拖拽层统一接管（它铺满底栏且在上层），这里不做 pointerInput。
         Row(modifier = Modifier.fillMaxSize()) {
             items.forEachIndexed { index, (label, icon) ->
                 val isSelected = selected == index
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
-                        .pointerInput(index) {
-                            detectTapGestures { onSelect(index) }
-                        },
+                        .fillMaxHeight(),
                     contentAlignment = Alignment.Center,
                 ) {
                     val contentColor by animateColorAsState(
@@ -271,51 +268,88 @@ fun MiuixNavBar(
         }
 
         // ==================== [图层4] 隐形拖拽层 ====================
+        // 【修复不跟手】拖拽层铺满整个底栏、不再 offset：
+        // 之前 offset 跟随滑块移动 → 局部坐标原点随 offset 漂移 → dx 与 snapTo
+        // 位移互相抵消 → 滑块追不上手指。铺满后坐标参考系固定（底栏不动），
+        // 用手势增量（positionChange）累计位移，滑块实时 snapTo，松手弹性吸附。
         Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .offset { IntOffset(sliderOffsetPx.roundToInt(), 0) }
-                .width(tabWidth)
-                .fillMaxHeight()
-                .pointerInput(tabCount, tabWidthPx) {
+                .fillMaxSize()
+                .pointerInput(tabCount, tabWidthPx, selected) {
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         // 按下：滑块变大（按压效果）
                         pressScale = 1.3f
+                        val startIndex = position.value
+                        var totalDx = 0f
+                        var isDrag = false
                         var lastX = down.position.x
+                        // 位移超过阈值才视为拖动（区分点击 vs 拖动）
+                        val touchSlop = with(density) { 8.dp.toPx() }
                         while (true) {
                             val event = awaitPointerEvent()
                             val change = event.changes.firstOrNull() ?: break
-                            if (change.isConsumed) continue
-                            if (change.pressed) {
-                                // 拖动跟手
-                                val dx = change.position.x - lastX
-                                if (dx != 0f) {
-                                    change.consume()
-                                    lastX = change.position.x
-                                    dragVelocity = dx
-                                    scope.launch {
-                                        position.snapTo(
-                                            (position.value + dx / tabWidthPx).coerceIn(0f, (tabCount - 1).toFloat()),
-                                        )
-                                    }
-                                }
-                            } else {
+                            if (!change.pressed) {
                                 // 松手：弹回 + 吸附到最近 tab
                                 pressScale = 1f
                                 dragVelocity = 0f
-                                val target = position.value.roundToInt().coerceIn(0, tabCount - 1)
-                                scope.launch {
-                                    position.animateTo(
-                                        target.toFloat(),
-                                        animationSpec = spring(
-                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                            stiffness = Spring.StiffnessLow,
-                                        ),
-                                    )
+                                if (!isDrag) {
+                                    // 未达拖动阈值 = 点击：直接切换点击处的 tab
+                                    val tapped = (change.position.x / tabWidthPx).toInt().coerceIn(0, tabCount - 1)
+                                    if (tapped != selected) {
+                                        scope.launch {
+                                            position.animateTo(
+                                                tapped.toFloat(),
+                                                animationSpec = spring(
+                                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                    stiffness = Spring.StiffnessLow,
+                                                ),
+                                            )
+                                        }
+                                        onSelect(tapped)
+                                    } else {
+                                        scope.launch {
+                                            position.animateTo(
+                                                selected.toFloat(),
+                                                animationSpec = spring(
+                                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                    stiffness = Spring.StiffnessLow,
+                                                ),
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    val target = position.value.roundToInt().coerceIn(0, tabCount - 1)
+                                    scope.launch {
+                                        position.animateTo(
+                                            target.toFloat(),
+                                            animationSpec = spring(
+                                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                stiffness = Spring.StiffnessLow,
+                                            ),
+                                        )
+                                    }
+                                    onSelect(target)
                                 }
-                                onSelect(target)
                                 break
+                            }
+                            // 拖动跟手：拖拽层铺满底栏（参考系固定不动），
+                            // 手动的上一帧坐标增量 = 手指真实位移，滑块 snapTo 精确跟随
+                            val dx = change.position.x - lastX
+                            lastX = change.position.x
+                            if (dx != 0f) {
+                                change.consume()
+                                totalDx += dx
+                                if (abs(totalDx) > touchSlop) isDrag = true
+                                if (isDrag) {
+                                    dragVelocity = dx
+                                    // snapTo 是 suspend：包进 scope.launch（awaitEachGesture 的
+                                    // restricted scope 不能直接调 suspend，只包一拍即完成，无竞态）
+                                    val targetX = (startIndex + totalDx / tabWidthPx)
+                                        .coerceIn(0f, (tabCount - 1).toFloat())
+                                    scope.launch { position.snapTo(targetX) }
+                                }
                             }
                         }
                         // 手势结束兜底：确保弹回

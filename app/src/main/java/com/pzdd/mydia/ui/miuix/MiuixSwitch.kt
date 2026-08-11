@@ -43,8 +43,10 @@ fun MiuixSwitch(
     // 这样用户在「设置」里手动切深色模式时开关颜色也会跟着变。
     val dark = cs.surface.luminance() < 0.5f
 
-    // 轨道色：开启=强调色（明显），关闭=中性灰（主题感知，深浅都可见）
-    val trackColor = if (checked) cs.primary else cs.surfaceVariant
+    // 轨道色：开启=强调色（明显），关闭=中性灰。
+    // 用 surfaceContainerHigh（浅色 #E8E8E8 / 深色 #2D2D2D）而不是 surfaceVariant：
+    // surfaceVariant 浅色下是白色，与白色卡片重叠导致开关隐形。
+    val trackColor = if (checked) cs.primary else cs.surfaceContainerHigh
     // 滑块色：开启=onPrimary（与轨道对比），关闭=onSurfaceVariant
     val thumbColor = if (checked) cs.onPrimary else cs.onSurfaceVariant
 

@@ -41,7 +41,7 @@ fun MiuixButton(
     contentPadding: PaddingValues = PaddingValues(horizontal = 24.dp, vertical = 10.dp),
 ) {
     val cs = MaterialTheme.colorScheme
-    val bg = if (enabled) cs.primary else cs.surfaceVariant
+    val bg = if (enabled) cs.primary else cs.surfaceContainerHigh
     val fg = if (enabled) cs.onPrimary else cs.onSurfaceVariant
     val interaction = remember { MutableInteractionSource() }
     Row(

@@ -1,6 +1,7 @@
 package com.pzdd.mydia.ui
 
 import android.content.Context
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -141,15 +142,18 @@ fun AppsScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(filtered, key = { it.pkg }) { app ->
-                // 注：应用列表可能很长（几十上百项），每行都用液态玻璃（drawBackdrop）
-                // 会在 RenderThread 上同时渲染大量 native RenderEffect → SIGSEGV 崩溃。
-                // 所以这里用普通半透明卡片（视觉有层次，但不触发 native 模糊）。
+                // 卡片样式与功能页（PrefGrouping.SectionCard）统一：
+                // surfaceContainerLow 底 + 20dp 圆角 + 细边框。
+                // 注意：应用列表很长（几十上百项），这里不能挂液态玻璃
+                // （drawBackdrop 在长列表 RenderThread 大量 native RenderEffect → SIGSEGV 崩溃），
+                // 所以用普通不透明卡片。
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                        containerColor = MaterialTheme.colorScheme.surface,
                     ),
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
                 ) {
                     AppRow(
                         app = app,
@@ -221,7 +225,7 @@ private fun AppRow(
                     Box(
                         Modifier.size(44.dp)
                             .background(
-                                MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp)
+                                MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(10.dp)
                             )
                     )
                 }

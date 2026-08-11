@@ -5,8 +5,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,30 +12,36 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 /**
- * 分组渲染模型。把扁平的 [Pref] 列表整理成「分区卡片」结构，实现 MIUI 风格的设置页：
+ * 分组渲染模型。把扁平的 [Pref] 列表整理成「分区卡片」结构（对齐 pznote 设置页）：
  *
- *  - 每个 [Pref.Header] 开启一个新分区（小标题 + 一张圆角卡片）
+ *  - 每个 [Pref.Header] 开启一个新分区，标题【内嵌在卡片顶部】（titleSmall SemiBold primary）
+ *  - 卡片 = surface 底 + 16dp 圆角 + 无边框（pznote 的 SettingsSectionCard 风格）
  *  - 分区内的普通项（无 dependency）平铺在卡片里，用内嵌细线分隔
- *  - 连续且 dependency 相同的子项聚成一个 [Row.SubGroup]，
- *    渲染成「镶嵌」进卡片内的嵌套圆角容器（带浅色底）—— 开关一开，子项平滑滑出并嵌在卡片里
+ *  - 连续且 dependency 相同的子项聚成一个 [Row.SubGroup]，渲染成卡片内的嵌套容器
  *
- * 这样配置页不再是「一行一条粗分隔线」的旧 Preference 样式，而是 iOS/MIUI 的卡片组。
+ * 【关键】整体用 Column + verticalScroll（对齐 pznote），**不用 LazyColumn**：
+ * 展开/收回时高度变化自然流动，没有 LazyColumn item 级 re-layout 推挤下方配置项
+ * （这是之前展开动画一直「影响到下边」的根源）。
+ * 配置页项数有限（几十项），Column + verticalScroll 性能无碍。
  */
 
-/** 一个分区：小标题（可选）+ 若干行。 */
+/** 一个分区：标题（可选）+ 若干行。 */
 internal data class Section(
     val header: Pref.Header?,
     val rows: List<Row>,
@@ -105,47 +109,41 @@ fun PrefGroupedColumn(
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     val sections = remember(items) { buildSections(items) }
-    LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = contentPadding) {
+    // Column + verticalScroll（对齐 pznote 设置页）：展开动画时高度自然流动，无 LazyColumn 推挤
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(contentPadding),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         sections.forEach { section ->
-            if (section.header != null) {
-                item(key = "h::${section.header.key}") { SectionHeader(section.header) }
-            }
-            val cardKey = "card::${section.header?.key ?: section.rows.joinToString { rowKey(it) }}"
-            item(key = cardKey) {
-                SectionCard(section, modifier = Modifier.animateItem())
-            }
+            SectionCard(section)
         }
     }
 }
 
-private fun rowKey(row: Row): String = when (row) {
-    is Row.Single -> row.pref.key
-    is Row.SubGroup -> "sub::${row.depKey}"
-}
-
-/** 分区小标题（不带卡片，飘在卡片上方）。 */
+/** 一张圆角卡片（对齐 pznote SettingsSectionCard）：标题内嵌顶部，surface 底 + 16dp 圆角。 */
 @Composable
-private fun SectionHeader(header: Pref.Header) {
-    androidx.compose.material3.Text(
-        text = header.title,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 24.dp, top = 16.dp, bottom = 4.dp, end = 16.dp),
-    )
-}
-
-/** 一张圆角卡片：包含分区里的所有行，行间用内嵌细线分隔；子组以镶嵌容器呈现。 */
-@Composable
-private fun SectionCard(section: Section, modifier: Modifier = Modifier) {
+private fun SectionCard(section: Section) {
     Surface(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
+            .padding(horizontal = 12.dp, vertical = 2.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
     ) {
-        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // 标题内嵌卡片顶部（pznote 风格：titleSmall SemiBold primary）
+            if (section.header != null) {
+                Text(
+                    text = section.header.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+            }
             section.rows.forEachIndexed { idx, row ->
                 when (row) {
                     is Row.Single -> PrefItemView(row.pref)
@@ -163,16 +161,21 @@ private fun SectionCard(section: Section, modifier: Modifier = Modifier) {
 @Composable
 private fun SubGroupContainer(group: Row.SubGroup) {
     val depOn = rememberBoolPref(group.depKey, false).value
+    // 显式「从上到下平铺」：expandVertically(Alignment.Top) 让内容从顶部向下铺开。
+    // 注意不能用默认 enter（expandIn 会水平+垂直同时展开 + scale，在窄卡片里表现为
+    // 「从左到右」）。外层是 Column + verticalScroll，垂直展开时下方内容自然让位。
     AnimatedVisibility(
         visible = depOn,
-        enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
-        exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top),
+        enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+        exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
     ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            shape = RoundedCornerShape(14.dp),
+                .padding(vertical = 6.dp),
+            shape = RoundedCornerShape(12.dp),
+            // 嵌套容器用 surfaceContainerHigh（浅色浅灰 #E8E8E8 / 深色 #2D2D2D）：
+            // 卡片已改为白色（浅色下），surfaceVariant 也是白色会重叠看不清。
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             Column(modifier = Modifier.padding(vertical = 2.dp)) {
@@ -187,12 +190,12 @@ private fun SubGroupContainer(group: Row.SubGroup) {
     }
 }
 
-/** 卡片内行间分隔线：左缩进与文字对齐，右贴边。 */
+/** 卡片内行间分隔线（对齐 pznote：onSurface 8% 透明细线）。 */
 @Composable
 private fun InsetDivider(start: androidx.compose.ui.unit.Dp = 16.dp) {
     HorizontalDivider(
         modifier = Modifier.padding(start = start, end = 0.dp),
-        thickness = 0.6.dp,
-        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        thickness = 0.5.dp,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
     )
 }

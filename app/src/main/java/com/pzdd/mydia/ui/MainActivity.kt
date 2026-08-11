@@ -140,7 +140,9 @@ private fun MainRoot(
     val hazeState = rememberHazeState()
     val backdrop = rememberLayerBackdrop()
 
-    Scaffold { padding ->
+    // 页面背景 background（白/深灰），与子页面 DiaScaffold 一致；
+    // 卡片由各列表组件用 surface（浅灰圆角卡）呈现「白底浅灰卡」层次。
+    Scaffold(containerColor = cs.background) { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
             // 内容层：layerBackdrop（backdrop 源）+ Haze 源（顶栏毛玻璃）
             Box(

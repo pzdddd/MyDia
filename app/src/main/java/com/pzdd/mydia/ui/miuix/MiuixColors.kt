@@ -24,6 +24,8 @@ object MiuixColors {
     val LightOnBackgroundVariant = Color(0xFF8C93B0)
 
     val LightSurface = Color(0xFFF7F7F7)         // 列表/卡片底
+    /** 页面背景（比 surface 深一档，让白色卡片浮现） */
+    val LightSurfaceDeep = Color(0xFFE8E8E8)
     val LightOnSurface = Color.Black
     val LightSurfaceVariant = Color.White
     val LightSurfaceContainer = Color.White        // 卡片

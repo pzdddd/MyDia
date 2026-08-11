@@ -378,7 +378,7 @@ private fun TypeOptions(selected: Int, onSelect: (Int) -> Unit) {
             val isSel = value == selected
             Surface(
                 shape = RoundedCornerShape(50),
-                color = if (isSel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                color = if (isSel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
                 modifier = Modifier.clickable { onSelect(value) },
             ) {
                 Text(
