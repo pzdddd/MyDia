@@ -24,8 +24,11 @@ class FakeTimeHook : DiaHook() {
     override fun install() {
         if (!prefs.getBoolean("time", false)) return
         val keep = prefs.getBoolean("time_keep", false)
-        val diff = prefs.getLong("time_difference", 0L)
-        val keepValue = prefs.getLong("time_keep_value", System.currentTimeMillis())
+        // UI 用 EditText（putString）写入，故这里也按 String 读再转 Long；
+        // 用 getLong 会因底层值是 String 而拿不到（PrefsFile.getLong 的 as? Number 返回 null）。
+        val diff = prefs.getString("time_difference", "")?.toLongOrNull() ?: 0L
+        val keepValue = prefs.getString("time_keep_value", "")?.toLongOrNull()
+            ?.takeIf { it > 0 } ?: System.currentTimeMillis()
         if (!keep && diff == 0L) return
 
         val transform: (Long) -> Long = { original -> if (keep) keepValue else original + diff }

@@ -38,7 +38,6 @@ fun SettingsScreen(contentPadding: PaddingValues, onOpenConsole: () -> Unit = {}
                 "启用日志",
                 summary = "logcat TAG=MyDia",
                 default = true,
-                dependency = "log_console",
             ),
             Pref.Action("open_console", "查看日志控制台", summary = "实时查看被注入 App 的模块日志", onClick = onOpenConsole),
             Pref.Header("显示"),
