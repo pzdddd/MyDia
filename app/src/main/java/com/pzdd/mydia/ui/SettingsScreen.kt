@@ -1,6 +1,10 @@
 package com.pzdd.mydia.ui
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
@@ -35,6 +39,7 @@ fun SettingsScreen(contentPadding: PaddingValues, onOpenConsole: () -> Unit = {}
                 "open_scope",
                 "作用域管理",
                 summary = "查看/添加/移除被 hook 的 App（免手动去 LSPosed 勾选）",
+                icon = Icons.Filled.AdminPanelSettings,
                 onClick = onOpenScope,
             ),
             Pref.Header("日志"),
@@ -45,7 +50,13 @@ fun SettingsScreen(contentPadding: PaddingValues, onOpenConsole: () -> Unit = {}
                 summary = "logcat TAG=MyDia",
                 default = true,
             ),
-            Pref.Action("open_console", "查看日志控制台", summary = "实时查看被注入 App 的模块日志", onClick = onOpenConsole),
+            Pref.Action(
+                "open_console",
+                "查看日志控制台",
+                summary = "实时查看被注入 App 的模块日志",
+                icon = Icons.Filled.Terminal,
+                onClick = onOpenConsole,
+            ),
             Pref.Header("显示"),
             Pref.Switch(
                 "ui_blur",
@@ -71,7 +82,7 @@ fun SettingsScreen(contentPadding: PaddingValues, onOpenConsole: () -> Unit = {}
                 default = false,
             ),
             Pref.Header("关于"),
-            Pref.Action("about_version", "版本", summary = "MyDia 1.0.0（Dia 复刻骨架）", onClick = {}),
+            Pref.Action("about_version", "版本", summary = "MyDia 1.0.0（Dia 复刻骨架）", icon = Icons.Filled.HelpOutline, onClick = {}),
             Pref.Action("about_host", "模块包名", summary = "com.pzdd.mydia", onClick = {}),
         ),
     )

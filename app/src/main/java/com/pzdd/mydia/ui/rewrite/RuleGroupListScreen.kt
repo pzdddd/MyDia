@@ -93,8 +93,12 @@ fun RuleGroupListScreen(
                         group = group,
                         onClick = { onOpenGroup(group.id) },
                         onToggle = { enabled ->
-                            group.enabled = enabled
-                            repo.upsertGroup(group)
+                            // copy() 替换触发重组（mutableStateList 不感知元素内部字段变化）
+                            val idx = groups.indexOfFirst { it.id == group.id }
+                            if (idx >= 0) {
+                                groups[idx] = group.copy(enabled = enabled)
+                                repo.upsertGroup(groups[idx])
+                            }
                         },
                         onDelete = { repo.deleteGroup(group.id); groups.remove(group) },
                     )

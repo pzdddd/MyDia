@@ -12,18 +12,24 @@ import java.io.File
  * gadget.so 会在 App 数据目录读 frida-gadget.config（配置脚本来源 / 监听端口），
  * 然后注入 JS——可做比 Xposed 更灵活的运行时 hook、绕过 ssl pinning 等。
  *
- * Dia 把 frida-gadget.so 重命名成 libalertclose.so 放进目标 App 的 nativeLibraryDir。
- * 我们简化：直接从 MyDia 的 assets 释放到目标 App 的 files 目录再 load，无需改目标 App。
+ * 【多脚本注入】config 由本类动态生成（不再用静态 assets config）：
+ *  - 用户配置的脚本路径（`frida_script_list`，每行一个）写进顶层 `scripts` 数组，
+ *    gadget 启动时逐个加载，实现多个脚本同时注入
+ *  - 监听模式（`frida_listen`）→ interaction.type = "listen"（frida -H 连接交互）
+ *  - 纯脚本模式 → interaction.type = "script"（gadget 自跑脚本，无需外部连接）
  *
  * 使用前置：
  *  1. 把 frida-gadget（arm64-v8a / armeabi-v7a）放到 app/src/main/jniLibs/<abi>/libfrida-gadget.so
- *  2. 把配置文件放到 assets/frida-gadget.config（或运行时由 UI 生成）
- *  3. App 端 prefs 打开 code_inject 开关
+ *     （或 assets/frida-gadget/libfrida-gadget.so，见 scripts/download-frida-gadget.sh）
+ *  2. App 端 prefs 打开 code_inject 开关，填写 frida_script_list 脚本路径
  *
  * 开关语义（对齐 Dia）：
  *  - code_inject : 总开关
  *  - frida_listen / select_active_process_listen_mode : 是否监听模式（不按进程过滤）
  *  - select_active_process : set，只在这些进程里注入（非监听模式下生效）
+ *  - frida_script_list : 注入的 JS 脚本绝对路径（每行一个，多脚本）
+ *
+ * 日志：注入每一步输出 [MyDia] 日志（开启设置页「远程日志」后，可在日志控制台查看）。
  */
 class FridaHook : DiaHook(), ApplicationHook.OnAppReady {
 
@@ -74,26 +80,78 @@ class FridaHook : DiaHook(), ApplicationHook.OnAppReady {
         }.getOrDefault(false)
         if (!hasSo) {
             Module.err(
-                "FridaHook: libfrida-gadget.so 未打包。请把对应架构的 gadget 放到 " +
-                    "app/src/main/assets/frida-gadget/libfrida-gadget.so 后重新编译。",
+                "FridaHook: libfrida-gadget.so 未打包。请用 scripts/download-frida-gadget.sh 下载后重新编译。",
                 IllegalStateException("asset missing")
             )
             return
         }
 
         try {
-            // 3) 从 MyDia assets 释放 gadget + config 到目标 App 的 filesDir
+            // 3) 释放 gadget so
             val soFile = extractAsset(ctx, "frida-gadget/libfrida-gadget.so")
-            val cfgFile = extractAsset(ctx, "frida-gadget/frida-gadget.config")
-            // gadget 默认在自身同目录读 <soname>.config，文件名必须匹配
+
+            // 4) 动态生成 config（多脚本 + 监听/脚本模式）
+            val cfg = buildConfig()
             val cfgTarget = File(soFile.parentFile, "libfrida-gadget.config")
-            cfgFile.copyTo(cfgTarget, overwrite = true)
+            cfgTarget.writeText(cfg)
+
             System.load(soFile.absolutePath)
             Module.log("FridaHook: injected from ${soFile.absolutePath}")
         } catch (t: Throwable) {
             Module.err("FridaHook: inject failed", t)
         }
     }
+
+    /**
+     * 生成 frida-gadget config（JSON）。
+     *
+     * 多脚本：读 SP `frida_scripts`（JSON 数组 [{id,name,source,enabled}]，
+     * 由 UI 的文件选择器选 .js 后存内容），过滤 enabled，用 `scripts[].source`
+     * 内联 JS 文本——frida-gadget 原生支持，目标进程直接执行，
+     * 不依赖跨进程读脚本文件（避免 SELinux/路径问题）。
+     * 无脚本时保留 shared socket 交互（可 frida -H 连接）。
+     */
+    private fun buildConfig(): String {
+        val listenMode = prefs.getBoolean("frida_listen", false) == true
+        val scripts = FridaScriptStore.load(prefs.getString(FridaScriptStore.KEY, null))
+            .filter { it.enabled && it.source.isNotBlank() }
+
+        Module.log("FridaHook: buildConfig listen=$listenMode scripts=${scripts.size}")
+        scripts.forEach { Module.log("FridaHook:   script: ${it.name}") }
+
+        val interactionType = when {
+            listenMode -> "listen"
+            scripts.isNotEmpty() -> "script"
+            else -> "shared"
+        }
+        val interaction = buildString {
+            append("\"type\": \"$interactionType\"")
+            if (interactionType == "listen") {
+                append(", \"address\": \"127.0.0.1\", \"port\": 27042, \"on_port_conflict\": \"fail\"")
+            }
+            if (interactionType == "shared") {
+                append(", \"path\": \"/data/local/tmp/mydia-frida.sock\", \"on_port_conflict\": \"fail\", \"on_load\": \"wait\"")
+            }
+        }
+
+        return buildString {
+            append("{")
+            append("\n  \"interaction\": { $interaction },")
+            if (scripts.isNotEmpty()) {
+                append("\n  \"scripts\": [")
+                scripts.forEachIndexed { i, s ->
+                    if (i > 0) append(",")
+                    append("\n    { \"source\": \"${escapeJson(s.source)}\", \"on_change\": \"ignore\" }")
+                }
+                append("\n  ],")
+            }
+            append("\n  \"teardown\": \"full\"")
+            append("\n}")
+        }
+    }
+
+    private fun escapeJson(s: String): String =
+        s.replace("\\", "\\\\").replace("\"", "\\\"")
 
     /** 把 assets 下的资源释放到 filesDir，返回释放后的 File */
     private fun extractAsset(ctx: Context, path: String): File {

@@ -11,7 +11,7 @@ import com.pzdd.mydia.ui.theme.MyDiaAppTheme
  * 某 App 的功能列表页（从「应用」Tab 点击某个 App 进入）。
  *
  * intent extra "pkg" = 目标 App 包名。
- * 展示：基础全局对话框取消（直接开关） + 增强模式入口。
+ * 分类目录式：每个分类入口点击 → CategoryActivity 渲染该分类详情页。
  */
 class AppFunctionListActivity : ComponentActivity() {
 
@@ -27,9 +27,11 @@ class AppFunctionListActivity : ComponentActivity() {
                     pkg = pkg,
                     appLabel = label,
                     onBack = { finish() },
-                    onOpenEnhance = {
+                    onOpenCategory = { cat ->
                         startActivity(
-                            Intent(this, EnhanceActivity::class.java).putExtra("pkg", pkg)
+                            Intent(this, CategoryActivity::class.java)
+                                .putExtra("pkg", pkg)
+                                .putExtra("cat", cat)
                         )
                     },
                     onOpenRewriteRules = {
@@ -42,6 +44,21 @@ class AppFunctionListActivity : ComponentActivity() {
                         startActivity(
                             Intent(this, com.pzdd.mydia.ui.rewrite.DexPathListActivity::class.java)
                                 .putExtra("pkg", pkg)
+                        )
+                    },
+                    onOpenConsole = {
+                        startActivity(Intent(this, ConsoleLogActivity::class.java))
+                    },
+                    onOpenFridaScripts = {
+                        startActivity(
+                            Intent(this, FridaScriptListActivity::class.java).putExtra("pkg", pkg)
+                        )
+                    },
+                    onPickActivity = { mode ->
+                        startActivity(
+                            Intent(this, ActivityListActivity::class.java)
+                                .putExtra("pkg", pkg)
+                                .putExtra("mode", mode)
                         )
                     },
                 )

@@ -129,6 +129,24 @@
             android:name=".ui.scope.ScopeActivity"
             android:exported="false"
             android:label="作用域管理" />
+
+        <!-- ============ Frida 注入脚本管理页 ============ -->
+        <activity
+            android:name=".ui.FridaScriptListActivity"
+            android:exported="false"
+            android:label="注入脚本管理" />
+
+        <!-- ============ Frida 脚本全屏查看/编辑页 ============ -->
+        <activity
+            android:name=".ui.ScriptEditActivity"
+            android:exported="false"
+            android:label="编辑脚本" />
+
+        <!-- ============ Activity 列表选择器（入口/黑名单）============ -->
+        <activity
+            android:name=".ui.ActivityListActivity"
+            android:exported="false"
+            android:label="选择 Activity" />
     </application>
 
 </manifest>

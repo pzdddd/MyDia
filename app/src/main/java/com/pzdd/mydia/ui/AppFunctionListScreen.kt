@@ -4,8 +4,12 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Rule
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -31,27 +35,29 @@ import kotlinx.coroutines.launch
 /**
  * 某 App 的功能列表页（从「应用」页点击某个 App 进来）。
  *
- * 顶层两类：
- *  1. 基础全局对话框取消（直接展开开关）
- *  2. 增强模式（入口，点击进入 [EnhanceScreen] 的 9 大分类）
+ * 分类目录式：每个功能大类折叠成一个入口（点击进详情页配置），
+ * 对话框/按钮/活动界面 + 六大扩展分类全部平铺在这一层。
  *
  * 右上角菜单（⋮）：启动 / 停止 / 重启目标 App，可在菜单里切换「使用 Root 执行」
  * （per-app 开关 app_control_root，停止/重启需要 Root）。
  *
  * 所有配置写在该 App 自己的 SP（文件名 = 包名），与注入侧 appPrefs 对齐。
  *
- * @param pkg      目标 App 包名
- * @param appLabel 顶部标题用
- * @param onOpenEnhance 点击「增强模式」回调
+ * @param pkg           目标 App 包名
+ * @param appLabel      顶部标题用
+ * @param onOpenCategory 点击某个分类入口 → 打开该分类详情页（key）
  */
 @Composable
 fun AppFunctionListScreen(
     pkg: String,
     appLabel: String,
     onBack: () -> Unit,
-    onOpenEnhance: () -> Unit,
+    onOpenCategory: (String) -> Unit,
     onOpenRewriteRules: () -> Unit = {},
     onOpenDexPaths: () -> Unit = {},
+    onOpenConsole: () -> Unit = {},
+    onOpenFridaScripts: () -> Unit = {},
+    onPickActivity: (String) -> Unit = {},
 ) {
     val sp = rememberAppSp(pkg)
     val context = LocalContext.current
@@ -104,87 +110,22 @@ fun AppFunctionListScreen(
                 }
             },
         ) { padding ->
+            // ===== 分类目录式功能列表 =====
+            // 每个大类折叠成一个入口（点击进详情页）；六大扩展分类直接平铺在本层。
+            // 详情页由 CategoryActivity 渲染（PrefRegistry.byKey 查 key）。
             val items = listOf(
-                Pref.Header("基础功能"),
-                Pref.Switch(
-                    "global_alert_close",
-                    "全局对话框取消",
-                    summary = "hook Dialog.show，反射强制改 mCancelable",
-                    default = true,
-                ),
-                Pref.Switch("disable_exit", "禁止退出 App", summary = "防止不适配/检测异常就自动退出（拦 finish / System.exit / 退后台）", default = false),
-                Pref.Switch("disable_toast", "禁用 Toast", default = false),
-                // ===== 增强模式三分类平铺（对话框/按钮/活动界面）=====
-                // 与 PrefRegistry.dialog/button/activity 共用同一批 SP key——
-                // 这里开的开关，增强模式详情页里同一个开关也亮着（状态共享）。
-                // hook 侧已解除 mod_ex 门控，开关独立生效，无需先开增强模式总开关。
-                Pref.Header("对话框"),
-                *PrefRegistry.dialog.flattenWithoutLeadingHeader().toTypedArray(),
-                Pref.Header("按钮"),
-                *PrefRegistry.button.flattenWithoutLeadingHeader().toTypedArray(),
-                Pref.Header("活动界面"),
-                *PrefRegistry.activity.flattenWithoutLeadingHeader().toTypedArray(),
-                Pref.Header("高级功能"),
-                Pref.Switch(
-                    "method_rewrite",
-                    "方法重写引擎",
-                    summary = "按规则改写目标方法返回值/参数",
-                    default = false,
-                ),
-                Pref.Action(
-                    "open_rewrite_rules",
-                    "配置重写规则",
-                    summary = "编辑规则组 / 规则 / 改写动作",
-                    dependency = "method_rewrite",
-                    onClick = onOpenRewriteRules,
-                ),
-                Pref.Action(
-                    "open_dex_paths",
-                    "dex 源管理",
-                    summary = "配置类树浏览器解析的 dex/apk",
-                    dependency = "method_rewrite",
-                    onClick = onOpenDexPaths,
-                ),
-                Pref.Switch(
-                    "shell_monitor",
-                    "Shell 命令监控",
-                    summary = "hook Runtime.exec，记录执行的命令",
-                    default = false,
-                ),
-                Pref.Switch(
-                    "algorithm_monitor",
-                    "算法监控",
-                    summary = "hook MD5/AES/HMAC/Base64，记录输入输出",
-                    default = false,
-                ),
-                Pref.Header("Frida 注入"),
-                Pref.Switch(
-                    "code_inject",
-                    "启用 Frida 注入",
-                    summary = "释放 frida-gadget 并配置加载",
-                    default = false,
-                ),
-                Pref.Switch(
-                    "frida_listen",
-                    "监听模式",
-                    summary = "以 listen 模式启动（交互式），否则纯脚本注入",
-                    default = false,
-                    dependency = "code_inject",
-                ),
-                Pref.EditText(
-                    "select_active_process_listen_mode",
-                    "监听进程名",
-                    summary = "仅在该进程加载 gadget（留空 = 主进程）",
-                    dependency = "code_inject",
-                ),
-                Pref.Header("增强模式"),
-                Pref.Action(
-                    "open_enhance",
-                    "配置增强模式",
-                    summary = "进入 9 大分类详细配置（对话框/按钮/活动已平铺在上方，此处是其余六大扩展分类）",
-                    icon = Icons.Filled.Refresh,
-                    onClick = onOpenEnhance,
-                ),
+                Pref.Header("功能"),
+                Pref.Action("go_basic", "基础功能", summary = "全局对话框取消 / 禁止退出 / 禁用 Toast", icon = PrefRegistry.basic.icon, onClick = { onOpenCategory("basic") }),
+                Pref.Action("go_dialog", "对话框", summary = "增强取消 / 禁用对话框 / 关键字拦截", icon = PrefRegistry.dialog.icon, onClick = { onOpenCategory("dialog") }),
+                Pref.Action("go_button", "按钮", summary = "强制显示 / 强制启用 / 自动点击", icon = PrefRegistry.button.icon, onClick = { onOpenCategory("button") }),
+                Pref.Action("go_activity", "活动界面", summary = "重定向入口 / 禁用 / 强制结束", icon = PrefRegistry.activity.icon, onClick = { onOpenCategory("activity") }),
+                Pref.Action("go_rewrite_monitor", "高级功能", summary = "方法重写引擎 / 命令监控 / 算法监控", icon = PrefRegistry.rewriteMonitor.icon, onClick = { onOpenCategory("rewrite_monitor") }),
+                Pref.Action("go_frida", "Frida 注入", summary = "注入脚本 / 监听模式 / 注入日志", icon = PrefRegistry.frida.icon, onClick = { onOpenCategory("frida") }),
+                Pref.Header("扩展功能"),
+                // 六大扩展分类平铺到本层
+                *PrefRegistry.enhanceCategories.drop(3).map { cat ->
+                    Pref.Action("go_ext_${cat.key}", cat.title, cat.summary, icon = cat.icon, onClick = { onOpenCategory(cat.key) })
+                }.toTypedArray(),
             )
             PrefGroupedColumn(items = items, contentPadding = padding)
         }

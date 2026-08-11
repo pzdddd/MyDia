@@ -101,6 +101,10 @@ object Module {
         // ApplicationHook 必须最先注册——其它 Hook 依赖它来等 Application 就绪
         DiaHook.register(ApplicationHook::class.java)
 
+        // Activity 列表自动枚举（对齐 Dia）：注入后无需进 MyDia 软件，
+        // 自动枚举目标 App 全部 Activity → 写 remote + 日志控制台
+        DiaHook.register(com.pzdd.mydia.module.hook.extras.ActivityListHook::class.java)
+
         // 注册所有功能 Hook（加新功能 = 这里加一行）
         DiaHook.register(
             DialogCancelHook::class.java,

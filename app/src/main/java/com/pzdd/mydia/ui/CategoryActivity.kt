@@ -1,5 +1,6 @@
 package com.pzdd.mydia.ui
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,7 +21,38 @@ class CategoryActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MyDiaAppTheme {
-                CategoryScreen(pkg = pkg, cat = cat, onBack = { finish() })
+                CategoryScreen(
+                    pkg = pkg,
+                    cat = cat,
+                    onBack = { finish() },
+                    onPickActivity = { mode ->
+                        startActivity(
+                            Intent(this, ActivityListActivity::class.java)
+                                .putExtra("pkg", pkg)
+                                .putExtra("mode", mode)
+                        )
+                    },
+                    onOpenRewriteRules = {
+                        startActivity(
+                            Intent(this, com.pzdd.mydia.ui.rewrite.RuleGroupListActivity::class.java)
+                                .putExtra("pkg", pkg)
+                        )
+                    },
+                    onOpenDexPaths = {
+                        startActivity(
+                            Intent(this, com.pzdd.mydia.ui.rewrite.DexPathListActivity::class.java)
+                                .putExtra("pkg", pkg)
+                        )
+                    },
+                    onOpenFridaScripts = {
+                        startActivity(
+                            Intent(this, FridaScriptListActivity::class.java).putExtra("pkg", pkg)
+                        )
+                    },
+                    onOpenConsole = {
+                        startActivity(Intent(this, ConsoleLogActivity::class.java))
+                    },
+                )
             }
         }
     }

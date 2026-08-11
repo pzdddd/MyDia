@@ -1,15 +1,20 @@
 package com.pzdd.mydia.ui.prefs
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.AutoFixHigh
+import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Masks
+import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.filled.Rule
+import androidx.compose.material.icons.filled.SmartButton
+import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Widgets
 
 /**
  * 全部配置页的集中注册表。
@@ -64,7 +69,7 @@ object PrefRegistry {
     val dialog = PrefScreen(
         key = "dialog",
         title = "对话框",
-        icon = Icons.Filled.Refresh,
+        icon = Icons.Filled.ChatBubble,
         items = listOf(
             Pref.Header("对话框取消"),
             Pref.Switch(
@@ -129,17 +134,36 @@ object PrefRegistry {
     val button = PrefScreen(
         key = "button",
         title = "按钮",
-        icon = Icons.Filled.PlayArrow,
+        icon = Icons.Filled.SmartButton,
         items = listOf(
-            Pref.Switch("hide_btn", "隐藏按钮", summaryOn = "hook setVisibility，GONE/INVISIBLE→VISIBLE", default = false),
-            Pref.Switch("dis_btn", "启用按钮", summaryOn = "hook setEnabled/setClickable，false→true", default = false),
-            Pref.Header("自动点击按钮"),
-            Pref.Switch("click_btn", "自动点击", summaryOn = "hook WindowManager.addView，BFS 扫描后 performClick", default = false),
-            Pref.EditText("click_btn_keyword", "按钮文字关键字", summary = "按文字匹配（空格分隔）", dependency = "click_btn"),
-            Pref.EditText("click_btn_id", "按钮 ID", summary = "按 id 匹配", dependency = "click_btn"),
-            Pref.EditText("click_delay_ms", "延时点击（毫秒）", summary = "addView 后多久开始扫描", default = "0", numeric = true, dependency = "click_btn"),
-            Pref.EditText("click_time", "点击次数", summary = "0 表示点一次", default = "0", numeric = true, dependency = "click_btn"),
-            Pref.Switch("click_btn_tip", "点击时 Toast", default = false, dependency = "click_btn"),
+            // 「反隐藏 / 反禁用 / 自动点击」合并为一个「按钮控制」区块（SP key 全保留，hook 零改动）
+            Pref.Header("按钮控制"),
+            Pref.Switch(
+                "hide_btn",
+                "强制显示按钮",
+                summary = "App 想隐藏（GONE/INVISIBLE）的按钮强制显示，如「跳过广告」「关闭」",
+                summaryOn = "拦截 setVisibility，隐藏一律改回可见",
+                default = false,
+            ),
+            Pref.Switch(
+                "dis_btn",
+                "强制启用按钮",
+                summary = "App 置灰禁用的按钮强制可点，如条件未满足时的「确认」",
+                summaryOn = "拦截 setEnabled/setClickable 等，false 一律改 true",
+                default = false,
+            ),
+            Pref.Switch(
+                "click_btn",
+                "自动点击按钮",
+                summary = "新弹窗出现时，自动点击匹配关键字/ID 的按钮（如「知道了」「同意」）",
+                summaryOn = "hook addView 扫描弹窗，命中即点击",
+                default = false,
+            ),
+            Pref.EditText("click_btn_keyword", "按钮文字关键字", summary = "按文字匹配（空格分隔，支持正则）", dependency = "click_btn"),
+            Pref.EditText("click_btn_id", "按钮 ID", summary = "按资源 id 匹配（空格分隔）", dependency = "click_btn"),
+            Pref.EditText("click_delay_ms", "延时点击（毫秒）", summary = "弹窗出现后延迟多久再点，给动画/加载留时间", default = "0", numeric = true, dependency = "click_btn"),
+            Pref.EditText("click_time", "点击次数", summary = "0 表示点一次，>0 点 N 次", default = "0", numeric = true, dependency = "click_btn"),
+            Pref.Switch("click_btn_tip", "点击时 Toast", summary = "自动点击后弹提示", default = false, dependency = "click_btn"),
         ),
     )
 
@@ -148,18 +172,32 @@ object PrefRegistry {
     val activity = PrefScreen(
         key = "activity",
         title = "活动界面",
-        icon = Icons.Filled.List,
+        icon = Icons.Filled.Widgets,
         items = listOf(
-            Pref.Header("设置应用入口"),
+            // 三个 Activity 功能合并为一个「Activity 控制」区块（SP key 全保留，hook 零改动）
+            Pref.Header("Activity 控制"),
             Pref.Switch("app_entry", "重定向启动 Activity", summaryOn = "把 launcher 重定向到指定 Activity", default = false),
-            Pref.EditText("app_activity_select", "目标 Activity 全类名", summary = "如 com.foo.MainActivity", dependency = "app_entry"),
-            Pref.Header("禁用指定 Activity"),
+            // 从列表选择（替代手动输入类名，避免手打错）
+            Pref.Action(
+                "pick_activity_single",
+                "选择入口 Activity",
+                summary = "从 App 的 Activity 列表里选一个作为入口",
+                icon = Icons.Filled.Widgets,
+                dependency = "app_entry",
+                onClick = {},
+            ),
             Pref.Switch("disable_activity", "禁用 Activity", summaryOn = "黑名单 Activity 直接 finish", default = false),
-            Pref.EditText("disable_activity_select", "Activity 全类名列表", summary = "逗号分隔", dependency = "disable_activity"),
-            Pref.Header("强制结束当前 Activity"),
-            Pref.Switch("activity_force_finish", "强制结束", summaryOn = "按手势触发 finish", default = false),
+            Pref.Action(
+                "pick_activity_multi",
+                "选择禁用 Activity",
+                summary = "从列表多选（可搜），写入黑名单",
+                icon = Icons.Filled.Widgets,
+                dependency = "disable_activity",
+                onClick = {},
+            ),
+            Pref.Switch("activity_force_finish", "强制结束", summaryOn = "按手势触发当前 Activity 结束", default = false),
             Pref.Switch("exit_auto", "启动即自动结束", summaryOn = "无需按键触发，App 一启动就启用结束逻辑", default = false, dependency = "activity_force_finish"),
-            Pref.ListChoice("activity_enabled", "触发手势", entries = TRIGGER_GESTURES, default = "-1"),
+            Pref.ListChoice("activity_enabled", "触发手势", entries = TRIGGER_GESTURES, default = "-1", dependency = "activity_force_finish"),
         ),
     )
 
@@ -168,7 +206,7 @@ object PrefRegistry {
     val fake = PrefScreen(
         key = "fake",
         title = "模拟与伪装",
-        icon = Icons.Filled.Phone,
+        icon = Icons.Filled.Masks,
         summary = "设备属性 / 时间 / 时区 / WiFi / 网络类型",
         items = listOf(
             Pref.Header("设备属性"),
@@ -211,7 +249,7 @@ object PrefRegistry {
     val notify = PrefScreen(
         key = "notify",
         title = "通知与提示",
-        icon = Icons.Filled.Notifications,
+        icon = Icons.Filled.NotificationsOff,
         summary = "禁用通知 / 禁用 Toast（关键字过滤）",
         items = listOf(
             Pref.Header("禁用通知"),
@@ -229,7 +267,7 @@ object PrefRegistry {
     val anti = PrefScreen(
         key = "anti",
         title = "反检测",
-        icon = Icons.Filled.Lock,
+        icon = Icons.Filled.VisibilityOff,
         summary = "隐藏 Xposed/Root/模拟器/多开/VPN，GPS 伪造",
         items = listOf(
             Pref.Header("通用"),
@@ -267,7 +305,7 @@ object PrefRegistry {
     val misc = PrefScreen(
         key = "misc",
         title = "大杂烩",
-        icon = Icons.Filled.MoreVert,
+        icon = Icons.Filled.Tune,
         summary = "剪贴板 / 传感器 / 后台隐藏 / so库 / 随机文件 / HTTP代理 / 启动禁网 / UiMode",
         items = listOf(
             Pref.Switch("hide_on_background", "后台隐藏", summaryOn = "从最近任务列表隐藏", default = false),
@@ -330,7 +368,7 @@ object PrefRegistry {
     val advanced = PrefScreen(
         key = "advanced",
         title = "高级功能",
-        icon = Icons.Filled.Star,
+        icon = Icons.Filled.AutoFixHigh,
         summary = "信任用户证书 / 签名伪造 / 方法置空",
         items = listOf(
             Pref.Switch("trust_user_certs", "信任用户证书", summaryOn = "让 App 信任用户安装的 CA（抓 HTTPS）", default = false),
@@ -367,7 +405,7 @@ object PrefRegistry {
     val dev = PrefScreen(
         key = "dev",
         title = "开发者",
-        icon = Icons.Filled.Edit,
+        icon = Icons.Filled.Code,
         summary = "Activity/Fragment 名提示 / 清数据 / 等待调试 / Intent/HTTP/SQL 监控",
         items = listOf(
             Pref.Header("调试辅助"),
@@ -408,7 +446,7 @@ object PrefRegistry {
     val basicDialog = PrefScreen(
         key = "basic_dialog",
         title = "基础全局对话框取消",
-        icon = Icons.Filled.Refresh,
+        icon = Icons.Filled.ChatBubbleOutline,
         items = listOf(
             Pref.Switch(
                 "global_alert_close",
@@ -430,6 +468,112 @@ object PrefRegistry {
         ),
     )
 
+    // ---------- 功能列表页折叠后的详情分类（基础/高级/Frida）----------
+
+    /** 基础功能（功能列表页「基础功能」入口的详情页）。 */
+    val basic = PrefScreen(
+        key = "basic",
+        title = "基础功能",
+        icon = Icons.Filled.ChatBubbleOutline,
+        items = listOf(
+            Pref.Switch(
+                "global_alert_close",
+                "全局对话框取消",
+                summary = "hook Dialog.show，反射强制改 mCancelable",
+                default = true,
+            ),
+            Pref.Switch("disable_exit", "禁止退出 App", summary = "防止不适配/检测异常就自动退出（拦 finish / System.exit / 退后台）", default = false),
+            Pref.Switch("disable_toast", "禁用 Toast", default = false),
+        ),
+    )
+
+    /** 高级功能（方法重写 + 监控）。功能列表页「高级功能」入口的详情页。 */
+    val rewriteMonitor = PrefScreen(
+        key = "rewrite_monitor",
+        title = "高级功能",
+        icon = Icons.Filled.AutoFixHigh,
+        items = listOf(
+            Pref.Switch(
+                "method_rewrite",
+                "方法重写引擎",
+                summary = "按规则改写目标方法返回值/参数",
+                default = false,
+            ),
+            Pref.Action(
+                "open_rewrite_rules",
+                "配置重写规则",
+                summary = "编辑规则组 / 规则 / 改写动作",
+                dependency = "method_rewrite",
+                icon = Icons.Filled.Rule,
+                onClick = {},
+            ),
+            Pref.Action(
+                "open_dex_paths",
+                "dex 源管理",
+                summary = "配置类树浏览器解析的 dex/apk",
+                dependency = "method_rewrite",
+                icon = Icons.Filled.FolderOpen,
+                onClick = {},
+            ),
+            Pref.Switch(
+                "shell_monitor",
+                "Shell 命令监控",
+                summary = "hook Runtime.exec，记录执行的命令",
+                default = false,
+            ),
+            Pref.Switch(
+                "algorithm_monitor",
+                "算法监控",
+                summary = "hook MD5/AES/HMAC/Base64，记录输入输出",
+                default = false,
+            ),
+        ),
+    )
+
+    /** Frida 注入（功能列表页「Frida 注入」入口的详情页）。 */
+    val frida = PrefScreen(
+        key = "frida",
+        title = "Frida 注入",
+        icon = Icons.Filled.Terminal,
+        items = listOf(
+            Pref.Switch(
+                "code_inject",
+                "启用 Frida 注入",
+                summary = "释放 frida-gadget 并配置加载",
+                default = false,
+            ),
+            Pref.Switch(
+                "frida_listen",
+                "监听模式",
+                summary = "以 listen 模式启动（frida -H 连接交互），否则直接跑脚本",
+                default = false,
+                dependency = "code_inject",
+            ),
+            Pref.EditText(
+                "select_active_process_listen_mode",
+                "监听进程名",
+                summary = "仅在该进程加载 gadget（留空 = 主进程）",
+                dependency = "code_inject",
+            ),
+            Pref.Action(
+                "open_frida_scripts",
+                "管理注入脚本",
+                summary = "从文件管理器选择 .js 脚本，可多条注入、逐个开关",
+                icon = Icons.Filled.Description,
+                dependency = "code_inject",
+                onClick = {},
+            ),
+            Pref.Action(
+                "open_console",
+                "查看注入日志",
+                summary = "日志控制台查看 Frida 注入结果（需在设置页开启远程日志）",
+                icon = Icons.Filled.Terminal,
+                dependency = "code_inject",
+                onClick = {},
+            ),
+        ),
+    )
+
     /** 增强模式下的全部 9 个分类页（按显示顺序）。 */
     val enhanceCategories: List<PrefScreen> = listOf(
         dialog, button, activity,
@@ -438,7 +582,7 @@ object PrefRegistry {
 
     /** 按 key 查找详情页（含基础对话框页）。 */
     fun byKey(key: String): PrefScreen? =
-        (enhanceCategories + basicDialog).firstOrNull { it.key == key }
+        (enhanceCategories + basicDialog + basic + rewriteMonitor + frida).firstOrNull { it.key == key }
 }
 
 /**

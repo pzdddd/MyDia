@@ -107,8 +107,12 @@ fun RuleListScreen(
                         rule = rule,
                         onClick = { onOpenRule(rule.id) },
                         onToggle = { enabled ->
-                            rule.enabled = enabled
-                            saveRule(repo, groupId, rule)
+                            // copy() 替换触发重组（mutableStateList 不感知元素内部字段变化）
+                            val idx = rules.indexOfFirst { it.id == rule.id }
+                            if (idx >= 0) {
+                                rules[idx] = rule.copy(enabled = enabled)
+                                saveRule(repo, groupId, rules[idx])
+                            }
                         },
                         onDelete = {
                             val g = repo.findGroup(groupId) ?: return@RuleCard
