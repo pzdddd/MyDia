@@ -43,7 +43,12 @@ class ShellMonitorHook : DiaHook() {
                         val cmd = describeCommand(param.args)
                         Module.log("Shell exec captured: $cmd")
                         runCatching {
+                            // 【关键】显式 component：Android 8+ 静态 receiver 收不到隐式广播
                             val i = Intent(ACTION).apply {
+                                component = android.content.ComponentName(
+                                    "com.pzdd.mydia",
+                                    "com.pzdd.mydia.monitor.ShellMonitorReceiver"
+                                )
                                 putExtra(EXTRA_PACKAGE, ctx.packageName)
                                 putExtra(EXTRA_COMMAND, cmd)
                                 // 注：Process 对象无法直接序列化，这里只回传命令；

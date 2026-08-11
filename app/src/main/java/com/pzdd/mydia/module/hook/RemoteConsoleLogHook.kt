@@ -25,7 +25,9 @@ import de.robv.android.xposed.XposedBridge
 class RemoteConsoleLogHook : DiaHook() {
 
     override fun install() {
-        if (!prefs.getBoolean("log_console", false)) return
+        // 【关键】log_console 是全局开关（设置页写在 digXposed），必须读 globalPrefs——
+        // 之前读 prefs(per-app SP) 永远 false，hook 从不安装，日志从未被拦截
+        if (!globalPrefs.getBoolean("log_console", false)) return
         DiaHook.get(ApplicationHook::class.java)?.addOnAppReady { ctx ->
             hookBridge(ctx)
         } ?: Module.err("RemoteConsoleLogHook: ApplicationHook not registered", IllegalStateException())
@@ -39,7 +41,13 @@ class RemoteConsoleLogHook : DiaHook() {
                     val msg = param.args.getOrNull(0) as? String ?: return
                     if (!msg.contains("[MyDia]")) return
                     runCatching {
+                        // 【关键】必须显式指定 component：Android 8+ manifest 静态注册的
+                        // receiver 收不到其他 app 的隐式广播（之前日志全丢的根因）
                         ctx.sendBroadcast(Intent(ACTION).apply {
+                            component = android.content.ComponentName(
+                                "com.pzdd.mydia",
+                                "com.pzdd.mydia.monitor.ConsoleLogReceiver"
+                            )
                             putExtra(EXTRA_PACKAGE, ctx.packageName)
                             putExtra(EXTRA_MSG, msg)
                             putExtra(EXTRA_TIME, System.currentTimeMillis())
@@ -53,6 +61,10 @@ class RemoteConsoleLogHook : DiaHook() {
                     val t = param.args.getOrNull(0) as? Throwable ?: return
                     runCatching {
                         ctx.sendBroadcast(Intent(ACTION).apply {
+                            component = android.content.ComponentName(
+                                "com.pzdd.mydia",
+                                "com.pzdd.mydia.monitor.ConsoleLogReceiver"
+                            )
                             putExtra(EXTRA_PACKAGE, ctx.packageName)
                             putExtra(EXTRA_MSG, "ERROR: ${t.message}")
                             putExtra(EXTRA_TIME, System.currentTimeMillis())
