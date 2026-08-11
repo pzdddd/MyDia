@@ -88,6 +88,10 @@ fun AppFunctionListScreen(
             title = appLabel,
             onBack = onBack,
             actions = {
+                // 日志控制台（右上角常驻入口）
+                IconButton(onClick = onOpenConsole) {
+                    Icon(Icons.Filled.Terminal, contentDescription = "日志控制台")
+                }
                 Box {
                     IconButton(onClick = { menuOpen = true }) {
                         Icon(Icons.Filled.MoreVert, contentDescription = "应用控制")

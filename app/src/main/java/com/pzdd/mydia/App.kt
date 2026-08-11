@@ -33,5 +33,18 @@ class App : Application() {
         // 官方标准激活检测：通过 libxposed-service 绑定 LSPosed binder 服务。
         // 无需把自身加入 Xposed 作用域，LSPosed Manager 会通过 XposedProvider 推送 binder。
         com.pzdd.mydia.module.ActivationManager.init()
+
+        // MCP 服务：若设置页已开启 mcp_enabled，启动时自动拉起前台服务
+        val mcpOn = getSharedPreferences("digXposed", Context.MODE_PRIVATE)
+            .getBoolean("mcp_enabled", false)
+        Timber.i("MyDia MCP enabled=$mcpOn")
+        if (mcpOn) {
+            runCatching {
+                com.pzdd.mydia.module.mcp.McpServerService.start(this)
+                Timber.i("MyDia MCP service start requested")
+            }.onFailure {
+                Timber.e(it, "MyDia MCP start failed")
+            }
+        }
     }
 }

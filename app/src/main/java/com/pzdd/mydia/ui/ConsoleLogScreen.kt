@@ -1,5 +1,7 @@
 package com.pzdd.mydia.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +17,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,12 +35,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.pzdd.mydia.monitor.ConsoleLogStore
 import com.pzdd.mydia.monitor.LogCategory
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import android.widget.Toast
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -57,6 +68,28 @@ fun ConsoleLogScreen(onBack: () -> Unit) {
         }
     }
     var selected by remember { mutableStateOf<LogCategory?>(null) }  // null = 全部
+    val context = LocalContext.current
+
+    // 保存日志：SAF 让用户选保存位置（txt）
+    val saveLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/plain")
+    ) { uri ->
+        if (uri != null) {
+            val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+            val text = buildString {
+                logs.forEach { e ->
+                    val t = SimpleDateFormat("HH:mm:ss.SSS", Locale.US).format(Date(e.time))
+                    append("[$t] [${e.pkg}] [${e.category.label}] ${e.msg}\n")
+                }
+            }
+            runCatching {
+                context.contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray()) }
+                Toast.makeText(context, "日志已保存", Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                Toast.makeText(context, "保存失败：${it.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     // 分类计数
     val counts = remember(logs) {
@@ -66,7 +99,20 @@ fun ConsoleLogScreen(onBack: () -> Unit) {
     }
     val filtered = if (selected == null) logs else logs.filter { it.category == selected }
 
-    DiaScaffold(title = "日志控制台（${logs.size}）", onBack = onBack) { padding ->
+    DiaScaffold(
+        title = "日志控制台（${logs.size}）",
+        onBack = onBack,
+        actions = {
+            // 保存日志（SAF 选位置写 txt）
+            IconButton(onClick = { saveLauncher.launch("mydia_log_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.txt") }) {
+                Icon(Icons.Filled.Save, contentDescription = "保存日志")
+            }
+            // 清除日志
+            IconButton(onClick = { ConsoleLogStore.clear() }) {
+                Icon(Icons.Filled.Delete, contentDescription = "清除日志")
+            }
+        },
+    ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             // 分类 tab
             LazyRow(
