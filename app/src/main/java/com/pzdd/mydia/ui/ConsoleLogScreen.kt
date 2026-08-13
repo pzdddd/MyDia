@@ -193,33 +193,7 @@ fun ConsoleLogScreen(onBack: () -> Unit) {
                         .padding(horizontal = 8.dp),
                 ) {
                     items(filtered) { entry ->
-                        val ts = SimpleDateFormat("HH:mm:ss.SSS", Locale.US).format(Date(entry.time))
-                        val accent = categoryColor(entry.category)
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 3.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.Top,
-                            ) {
-                                // 左缘分类色条
-                                Box(
-                                    modifier = Modifier
-                                        .padding(end = 8.dp)
-                                        .height(18.dp)
-                                        .background(accent, RoundedCornerShape(3.dp)),
-                                ) {}
-                                Text(
-                                    text = "[$ts] [${entry.pkg}] ${entry.msg}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontFamily = FontFamily.Monospace,
-                                )
-                            }
-                        }
+                        GenericLogCard(entry)
                     }
                 }
             }
@@ -251,6 +225,33 @@ private fun categoryColor(cat: LogCategory): Color = when (cat) {
 // ==================== 算法日志结构化卡片 ====================
 
 private val algoGreen = Color(0xFF66BB6A)
+
+/** 普通日志卡片：标题行（时间 + 分类色标签 + 包名）+ 内容行（消息）。 */
+@Composable
+private fun GenericLogCard(entry: com.pzdd.mydia.monitor.ConsoleLogEntry) {
+    val ts = SimpleDateFormat("HH:mm:ss.SSS", Locale.US).format(Date(entry.time))
+    val accent = categoryColor(entry.category)
+    val cs = MaterialTheme.colorScheme
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        shape = RoundedCornerShape(10.dp),
+        color = cs.surface,
+    ) {
+        Column(modifier = Modifier.padding(14.dp, 8.dp)) {
+            // 标题行：分类色条 + 时间 + 分类标签 + 包名
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Box(Modifier.width(3.dp).height(16.dp).background(accent, RoundedCornerShape(2.dp)))
+                Text(ts, style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace, color = cs.primary)
+                Surface(shape = RoundedCornerShape(4.dp), color = accent.copy(alpha = 0.15f)) {
+                    Text(entry.category.label, modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp), style = MaterialTheme.typography.labelSmall, color = accent, fontWeight = FontWeight.Bold)
+                }
+                Text(entry.pkg, style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant, maxLines = 1)
+            }
+            // 内容行：消息原文（等宽）
+            Text(entry.msg.removePrefix("[MyDia] ").trim(), style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = cs.onSurface, modifier = Modifier.padding(top = 3.dp))
+        }
+    }
+}
 
 @Composable
 private fun AlgorithmLogCard(rec: com.pzdd.mydia.monitor.MonitorRecord) {
