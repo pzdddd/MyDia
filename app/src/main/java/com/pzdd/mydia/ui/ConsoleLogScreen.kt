@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -37,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.pzdd.mydia.monitor.ConsoleLogStore
@@ -165,21 +167,7 @@ fun ConsoleLogScreen(onBack: () -> Unit) {
                             .padding(horizontal = 8.dp),
                     ) {
                         items(algoLogs) { rec ->
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 3.dp),
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.surface,
-                                border = BorderStroke(0.5.dp, Color(0xFF66BB6A).copy(alpha = 0.4f)),
-                            ) {
-                                Text(
-                                    text = rec.format(),
-                                    modifier = Modifier.padding(12.dp),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontFamily = FontFamily.Monospace,
-                                )
-                            }
+                            AlgorithmLogCard(rec)
                         }
                     }
                 }
@@ -258,4 +246,64 @@ private fun categoryColor(cat: LogCategory): Color = when (cat) {
     LogCategory.Monitor -> Color(0xFF66BB6A)     // 绿
     LogCategory.Frida -> Color(0xFFEC407A)       // 粉
     LogCategory.Other -> Color(0xFF9E9E9E)       // 灰
+}
+
+// ==================== 算法日志结构化卡片 ====================
+
+private val algoGreen = Color(0xFF66BB6A)
+
+@Composable
+private fun AlgorithmLogCard(rec: com.pzdd.mydia.monitor.MonitorRecord) {
+    val ts = SimpleDateFormat("HH:mm:ss.SSS", Locale.US).format(Date(rec.time))
+    val cs = MaterialTheme.colorScheme
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = cs.surface,
+        border = BorderStroke(0.5.dp, algoGreen.copy(alpha = 0.3f)),
+    ) {
+        Column(modifier = Modifier.padding(14.dp, 10.dp)) {
+            // 标题行：时间 + 算法名 + 加密解密标记
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Box(Modifier.width(3.dp).height(16.dp).background(algoGreen, RoundedCornerShape(2.dp)))
+                Text(ts, style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace, color = cs.primary)
+                Text(rec.algo, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = cs.onSurface)
+                if (rec.opMode == 1) Text(" 加密", style = MaterialTheme.typography.labelSmall, color = Color(0xFFE65100), fontWeight = FontWeight.Bold)
+                if (rec.opMode == 2) Text(" 解密", style = MaterialTheme.typography.labelSmall, color = Color(0xFF1565C0), fontWeight = FontWeight.Bold)
+            }
+            // 信息行
+            Text("${rec.pkg}  ${rec.process}  ${rec.thread}", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
+            // 数据分区
+            rec.data?.let { AlgoField("输入", bytesToHexShort(it), Color(0xFFFFA726)) }
+            rec.ret?.let { AlgoField("输出", bytesToHexShort(it), Color(0xFF66BB6A)) }
+            rec.key?.let { AlgoField("密钥", bytesToHexShort(it), Color(0xFFEF5350)) }
+            rec.iv?.let { AlgoField("IV", bytesToHexShort(it), Color(0xFFAB47BC)) }
+            // 调用栈
+            if (rec.stack.isNotBlank()) {
+                val stackShort = rec.stack.lines().take(8).joinToString("\n")
+                AlgoField("调用栈", stackShort, cs.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+/** 算法记录里的一行字段（带标签色块 + hex 内容）。 */
+@Composable
+private fun AlgoField(label: String, value: String, color: Color) {
+    Row(modifier = Modifier.padding(top = 4.dp), verticalAlignment = Alignment.Top) {
+        Surface(
+            shape = RoundedCornerShape(4.dp),
+            color = color.copy(alpha = 0.15f),
+            modifier = Modifier.padding(end = 6.dp),
+        ) {
+            Text(label, modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp), style = MaterialTheme.typography.labelSmall, color = color, fontWeight = FontWeight.Bold)
+        }
+        Text(value.take(300), style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** hex 截断辅助（取前 128 字符 + 省略号）。 */
+private fun bytesToHexShort(b: ByteArray): String {
+    val hex = com.pzdd.mydia.module.rewrite.bytesToHex(b, 256)
+    return if (hex.length > 128) hex.take(128) + "…(${hex.length})" else hex
 }
