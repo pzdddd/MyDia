@@ -111,6 +111,9 @@ object Module {
         // JustTrustMe+（全量 SSL Pinning 绕过，比 TrustUserCertsHook 更全面）
         DiaHook.register(com.pzdd.mydia.module.hook.extras.JustTrustMePlusHook::class.java)
 
+        // 增强隐藏：libxposed 新 API 拦截 + /proc/self/maps 内容过滤 + TracerPid 清零
+        DiaHook.register(com.pzdd.mydia.module.hook.extras.EnhancedHideHook::class.java)
+
         // 注册所有功能 Hook（加新功能 = 这里加一行）
         DiaHook.register(
             DialogCancelHook::class.java,
