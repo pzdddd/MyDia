@@ -373,6 +373,13 @@ object PrefRegistry {
         summary = "信任用户证书 / 签名伪造 / 方法置空",
         items = listOf(
             Pref.Switch("trust_user_certs", "信任用户证书", summaryOn = "让 App 信任用户安装的 CA（抓 HTTPS）", default = false),
+            Pref.Switch(
+                "just_trust_me_plus",
+                "SSL Pinning 绕过（JustTrustMe+）",
+                summary = "全量绕过证书锁定：OkHttp CertificatePinner / TrustManager / Conscrypt / WebView / HostnameVerifier",
+                summaryOn = "已开启（10 个 bypass 点）",
+                default = false,
+            ),
             Pref.Header("签名伪造"),
             Pref.Switch("app_signatures_fake", "启用签名伪造", summaryOn = "绕过 App 签名自检", default = false),
             Pref.EditText("app_signatures_select", "签名配置", summary = "每行「包名=hex签名」", multiLine = true, dependency = "app_signatures_fake"),

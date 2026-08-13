@@ -108,6 +108,9 @@ object Module {
         // MCP 命令通道：轮询 remote 命令，支持实时 hook 观察（MCP server 的 hook_observe）
         DiaHook.register(com.pzdd.mydia.module.hook.extras.McpCommandHook::class.java)
 
+        // JustTrustMe+（全量 SSL Pinning 绕过，比 TrustUserCertsHook 更全面）
+        DiaHook.register(com.pzdd.mydia.module.hook.extras.JustTrustMePlusHook::class.java)
+
         // 注册所有功能 Hook（加新功能 = 这里加一行）
         DiaHook.register(
             DialogCancelHook::class.java,
