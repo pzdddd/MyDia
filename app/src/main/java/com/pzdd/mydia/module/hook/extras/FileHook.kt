@@ -25,11 +25,14 @@ import java.io.File
 class FileHook : DiaHook() {
 
     private val defaultHidden = listOf(
-        "su",
-        "xposedbridge.jar",
-        "libxposed_art.so",
-        "xposed.prop",
+        "su", "busybox",
+        "xposedbridge.jar", "libxposed_art.so", "xposed.prop",
         "de.robv.android.xposed.installer",
+        "/data/adb/magisk", "/sbin/.magisk", "/data/adb/modules",
+        "/data/adb/zygisk", "/debug_ramdisk", "magisk.db",
+        "/data/adb/shamiko", "/data/adb/modules/zygisksu",
+        "org.lsposed.manager", "org.meowcat.edxposed",
+        "Superuser.apk", "superuser.apk",
     )
 
     override fun install() {
